@@ -1,25 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAddress, useConnect, metamaskWallet } from '@thirdweb-dev/react'
+
+const metamaskConfig = metamaskWallet()
 
 export default function Landing() {
   const navigate = useNavigate()
-  const [showLogin, setShowLogin] = useState(false)
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const address = useAddress()
+  const connect = useConnect()
 
-  const handleLogin = (e) => {
-    e.preventDefault()
-    if (username === 'Admin' && password === 'Test') {
+  const [showLogin, setShowLogin] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (address) {
+      setShowLogin(false)
       navigate('/dashboard')
-    } else {
-      setError('Invalid credentials')
+    }
+  }, [address, navigate])
+
+  const handleWalletConnect = async () => {
+    try {
+      setError('');
+      setLoading(true);
+      await connect(metamaskConfig);
+    } catch (err) {
+      setError("Failed to connect wallet");
+    } finally {
+      setLoading(false);
     }
   }
 
   const handleConnectClick = (e) => {
     if (e) e.stopPropagation();
-    setShowLogin(true);
+    if (address) {
+      navigate('/dashboard')
+    } else {
+      setShowLogin(true)
+    }
   }
 
   return (
@@ -28,26 +47,9 @@ export default function Landing() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-[#1c1b1c] p-8 rounded-xl border border-[#3b494c]/30 shadow-2xl w-full max-w-md mx-4">
             <h3 className="text-2xl font-headline font-bold mb-6 text-[#e5e2e3]">Connect Wallet</h3>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-sm font-label text-[#bac9cc] mb-1">Username</label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#131314] border border-[#3b494c]/50 rounded-lg px-4 py-2 text-[#e5e2e3] focus:outline-none focus:border-[#00e5ff] transition-colors"
-                  placeholder="Admin"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-label text-[#bac9cc] mb-1">Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#131314] border border-[#3b494c]/50 rounded-lg px-4 py-2 text-[#e5e2e3] focus:outline-none focus:border-[#00e5ff] transition-colors"
-                  placeholder="Test"
-                />
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+              <div className="text-[#bac9cc] text-sm mb-4">
+                Securely connect to your Web3 wallet to access the dashboard.
               </div>
               {error && <p className="text-red-400 text-sm">{error}</p>}
               <div className="flex justify-end gap-3 mt-6">
@@ -59,10 +61,12 @@ export default function Landing() {
                   Cancel
                 </button>
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleWalletConnect}
+                  disabled={loading}
                   className="px-6 py-2 bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] rounded-lg font-bold font-headline hover:opacity-90 transition-opacity"
                 >
-                  Connect
+                  {loading ? "Connecting..." : "Connect"}
                 </button>
               </div>
             </form>
