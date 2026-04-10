@@ -31,9 +31,9 @@ export default function Landing() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-sm font-label text-[#bac9cc] mb-1">Username</label>
-                <input 
-                  type="text" 
-                  value={username} 
+                <input
+                  type="text"
+                  value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-[#131314] border border-[#3b494c]/50 rounded-lg px-4 py-2 text-[#e5e2e3] focus:outline-none focus:border-[#00e5ff] transition-colors"
                   placeholder="Admin"
@@ -41,9 +41,9 @@ export default function Landing() {
               </div>
               <div>
                 <label className="block text-sm font-label text-[#bac9cc] mb-1">Password</label>
-                <input 
-                  type="password" 
-                  value={password} 
+                <input
+                  type="password"
+                  value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full bg-[#131314] border border-[#3b494c]/50 rounded-lg px-4 py-2 text-[#e5e2e3] focus:outline-none focus:border-[#00e5ff] transition-colors"
                   placeholder="Test"
@@ -51,14 +51,14 @@ export default function Landing() {
               </div>
               {error && <p className="text-red-400 text-sm">{error}</p>}
               <div className="flex justify-end gap-3 mt-6">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={(e) => { e.stopPropagation(); setShowLogin(false); }}
                   className="px-4 py-2 text-[#bac9cc] hover:text-white transition-colors"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   type="submit"
                   className="px-6 py-2 bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] rounded-lg font-bold font-headline hover:opacity-90 transition-opacity"
                 >
@@ -76,9 +76,9 @@ export default function Landing() {
             <span className="text-xl font-bold tracking-tighter text-[#c3f5ff] font-headline uppercase">ZenETH</span>
           </div>
           <div className="hidden md:flex items-center space-x-10 font-headline tracking-tight font-semibold">
-            <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Ecosystem</a>
-            <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Governance</a>
-            <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Security</a>
+            <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Lend</a>
+            <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Borrow</a>
+            <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Explore</a>
             <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Docs</a>
           </div>
           <button

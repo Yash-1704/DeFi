@@ -4,7 +4,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
   { path: '/payments', label: 'Payments', icon: 'payments' },
   { path: '/lending', label: 'Lending', icon: 'account_balance' },
-  { path: '/staking', label: 'Staking', icon: 'currency_exchange' },
+  { path: '/splitcoin', label: 'SplitCoin', icon: 'call_split' },
   { path: '/transactions', label: 'Transactions', icon: 'receipt_long' },
   { path: '/profile', label: 'Profile', icon: 'person' },
 ]

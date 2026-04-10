@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 const mobileNav = [
   { path: '/dashboard', label: 'Dash', icon: 'dashboard' },
-  { path: '/staking', label: 'Stake', icon: 'currency_exchange' },
+  { path: '/splitcoin', label: 'SplitCoin', icon: 'call_split' },
   { path: '/profile', label: 'Profile', icon: 'person' },
 ]
 

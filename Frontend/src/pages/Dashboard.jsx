@@ -115,7 +115,7 @@ export default function Dashboard() {
               <div className="bg-[#1c1b1c] rounded-xl overflow-hidden border border-[#3b494c]/10">
                 {[
                   { icon: 'swap_horiz', color: '#00daf3', bg: '#00daf3', title: 'Swap ETH for NEX', time: 'Today, 2:45 PM', status: 'Completed', amount: '-1.42 ETH', usd: '≈ $4,203.12', amountColor: '#e5e2e3' },
-                  { icon: 'download', color: '#00e297', bg: '#00e297', title: 'Staking Reward', time: 'Yesterday, 11:12 PM', status: 'Completed', amount: '+42.08 NEX', usd: '≈ $154.22', amountColor: '#00e297' },
+                  { icon: 'call_split', color: '#00e297', bg: '#00e297', title: 'Group Expense Settled', time: 'Yesterday, 11:12 PM', status: 'Completed', amount: '+0.42 ETH', usd: '≈ $154.22', amountColor: '#00e297' },
                   { icon: 'upload', color: '#ffb4ab', bg: '#ffb4ab', title: 'Lending Withdrawal', time: 'Oct 24, 9:00 AM', status: 'Completed', amount: '-10,000 USDC', usd: '≈ $10,000.00', amountColor: '#e5e2e3' },
                 ].map((tx, i) => (
                   <div key={i} className={`flex items-center justify-between p-5 hover:bg-[#201f20] transition-colors ${i > 0 ? 'border-t border-[#3b494c]/5' : ''}`}>
