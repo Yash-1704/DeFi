@@ -41,12 +41,11 @@ export default function Transactions() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             {[
               { label: 'Total Volume', value: '$1,284,592.00', sub: '+12.4%', subColor: 'text-[#00e297]', subIcon: 'trending_up' },
               { label: 'Successful TXs', value: '482', sub: '99.8% Success Rate', subColor: 'text-neutral-500' },
               { label: 'Gas Expended', value: '0.42 ETH', sub: 'Avg. 12 Gwei', subColor: 'text-neutral-500' },
-              { label: 'Nexus Reputation', value: '924', sub: null, subColor: null, isReputation: true },
             ].map((s, i) => (
               <div key={i} className={`bg-[#201f20] rounded-xl p-6 relative overflow-hidden group ${s.isReputation ? 'border border-cyan-400/10' : ''}`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />

@@ -55,52 +55,52 @@ export default function Dashboard() {
             </div>
           </section>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Active Yield */}
-            <div className="bg-[#201f20] rounded-xl p-6 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Wallet */}
+            <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
               <div className="flex justify-between items-start mb-4">
-                <span className="material-symbols-outlined text-[#00e297] bg-[#00e297]/10 p-2 rounded-lg">electric_bolt</span>
-                <p className="text-xs font-bold text-[#00e297] uppercase">Live</p>
+                <span className="material-symbols-outlined text-[#00daf3] bg-[#00daf3]/10 p-2 rounded-lg">account_balance_wallet</span>
               </div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Active Yield (APR)</p>
-              <h3 className="text-4xl font-black font-headline text-[#e5e2e3] mb-4">18.42%</h3>
-              <div className="w-full h-1.5 bg-neutral-800 rounded-full overflow-hidden">
-                <div className="h-full bg-gradient-to-r from-[#00e297] to-[#00e5ff] w-[75%]" />
-              </div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Wallet Amount</p>
+              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">$42,890.00</h3>
             </div>
 
-            {/* Debt Ratio */}
-            <div className="bg-[#201f20] rounded-xl p-6 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
+            {/* Lended */}
+            <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
               <div className="flex justify-between items-start mb-4">
-                <span className="material-symbols-outlined text-[#ffb4ab] bg-[#ffb4ab]/10 p-2 rounded-lg">speed</span>
-                <span className="material-symbols-outlined text-neutral-500 text-sm">info</span>
+                <span className="material-symbols-outlined text-[#00e297] bg-[#00e297]/10 p-2 rounded-lg">upload</span>
               </div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Debt Ratio</p>
-              <div className="flex items-center gap-4">
-                <h3 className="text-4xl font-black font-headline text-[#e5e2e3]">32.1%</h3>
-                <p className="text-xs text-neutral-400 font-semibold italic">Healthy</p>
-              </div>
-              <div className="mt-4 flex gap-1">
-                <div className="h-1.5 w-1/4 bg-[#00e297] rounded-full" />
-                <div className="h-1.5 w-1/4 bg-[#00e297] rounded-full" />
-                <div className="h-1.5 w-1/4 bg-neutral-800 rounded-full" />
-                <div className="h-1.5 w-1/4 bg-neutral-800 rounded-full" />
-              </div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Total Lended</p>
+              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">$120,500.00</h3>
             </div>
 
-            {/* Next Reward */}
-            <div className="bg-[#201f20] rounded-xl p-6 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
+            {/* Borrowed */}
+            <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
               <div className="flex justify-between items-start mb-4">
-                <span className="material-symbols-outlined text-[#d1bcff] bg-[#d1bcff]/10 p-2 rounded-lg">update</span>
-                <div className="animate-pulse flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#d1bcff]" />
-                  <span className="text-[10px] text-[#d1bcff] font-bold">Syncing</span>
+                <span className="material-symbols-outlined text-[#ffb4ab] bg-[#ffb4ab]/10 p-2 rounded-lg">download</span>
+              </div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Total Borrowed</p>
+              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">$15,000.00</h3>
+            </div>
+
+            {/* Group Pools */}
+            <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
+              <div className="flex justify-between items-start mb-4">
+                <span className="material-symbols-outlined text-[#d1bcff] bg-[#d1bcff]/10 p-2 rounded-lg">groups</span>
+              </div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Group Pools</p>
+              <h3 className="text-3xl font-black font-headline text-[#00daf3] mb-3">3.50 ETH</h3>
+              <div className="flex flex-col gap-1 w-full">
+                <div className="flex justify-between text-[10px] items-center bg-[#0e0e0f] px-2 py-1.5 rounded-md">
+                   <span className="text-neutral-400 font-bold max-w-[70px] truncate">Goa Trip</span> 
+                   <span className="text-[#e5e2e3] font-bold">1.50 ETH</span>
+                </div>
+                <div className="flex justify-between text-[10px] items-center bg-[#0e0e0f] px-2 py-1.5 rounded-md">
+                   <span className="text-neutral-400 font-bold max-w-[70px] truncate">Weekend</span> 
+                   <span className="text-[#e5e2e3] font-bold">2.00 ETH</span>
                 </div>
               </div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Next Reward Drop</p>
-              <h3 className="text-4xl font-black font-headline text-[#e5e2e3]">14:22<span className="text-xl text-neutral-500">:08</span></h3>
-              <p className="text-[10px] text-neutral-500 mt-4">ESTIMATED YIELD: <span className="text-[#e5e2e3] font-bold">124.50 NEX</span></p>
             </div>
           </div>
 
@@ -137,20 +137,20 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Top Assets */}
+            {/* Market Trends */}
             <div className="space-y-6">
               <div className="flex justify-between items-center px-2">
-                <h4 className="font-headline font-bold text-xl">Top Assets</h4>
+                <h4 className="font-headline font-bold text-xl">Market Trends</h4>
                 <span className="material-symbols-outlined text-neutral-500 cursor-pointer">more_vert</span>
               </div>
               <div className="space-y-4">
                 {[
-                  { name: 'Ethereum', ticker: 'ETH/USDC', change: '+8.2%', price: '$2,942.50', icon: 'diamond', color: 'text-indigo-400' },
-                  { name: 'Nexus Token', ticker: 'NEX/ETH', change: '+24.8%', price: '$1.24', icon: 'token', color: 'text-cyan-400' },
-                  { name: 'Tether', ticker: 'USDT/DAI', change: '0.0%', price: '$1.00', icon: 'savings', color: 'text-green-400' },
+                  { name: 'Ethereum', ticker: 'ETH/USDC', change: '+8.2%', price: '$2,942.50', icon: 'diamond', color: 'text-indigo-400', graph: [20, 30, 40, 35, 55, 70, 90], isUp: true },
+                  { name: 'Nexus Token', ticker: 'NEX/ETH', change: '+24.8%', price: '$1.24', icon: 'token', color: 'text-cyan-400', graph: [10, 15, 30, 45, 60, 80, 100], isUp: true },
+                  { name: 'Wrapped BTC', ticker: 'WBTC/USD', change: '-2.4%', price: '$58,100.00', icon: 'currency_bitcoin', color: 'text-orange-400', graph: [80, 75, 85, 60, 50, 45, 40], isUp: false },
                 ].map((asset, i) => (
-                  <div key={i} className="bg-[#201f20] rounded-xl p-5 border border-[#3b494c]/10 hover:border-[#c3f5ff]/30 transition-all">
-                    <div className="flex items-center gap-4 mb-4">
+                  <div key={i} className="bg-[#201f20] rounded-xl p-5 border border-[#3b494c]/10 hover:border-[#c3f5ff]/30 transition-all flex flex-col gap-4 group">
+                    <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center border border-neutral-700">
                         <span className={`material-symbols-outlined ${asset.color}`}>{asset.icon}</span>
                       </div>
@@ -159,17 +159,19 @@ export default function Dashboard() {
                         <p className="text-[10px] text-neutral-500 uppercase tracking-widest font-semibold">{asset.ticker}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-[#00e297]">{asset.change}</p>
-                        <p className="text-[10px] text-neutral-500 uppercase font-bold">24H</p>
+                        <p className={`text-sm font-bold ${asset.isUp ? 'text-[#00e297]' : 'text-[#ffb4ab]'}`}>{asset.change}</p>
+                        <p className="text-xl font-black text-[#e5e2e3] font-headline">{asset.price}</p>
                       </div>
                     </div>
-                    <div className="flex justify-between items-center pt-4 border-t border-[#3b494c]/5">
-                      <div className="flex -space-x-2">
-                        {['A', 'C'].map(l => (
-                          <div key={l} className="w-6 h-6 rounded-full bg-[#353436] border border-[#131314] flex items-center justify-center text-[8px] font-bold">{l}</div>
-                        ))}
-                      </div>
-                      <p className="text-xs font-black text-[#e5e2e3]">{asset.price}</p>
+                    {/* Mini Sparkline Visualization */}
+                    <div className="h-10 w-full flex items-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                      {asset.graph.map((val, j) => (
+                        <div key={j} className="flex-1 rounded-sm transition-all" style={{
+                           height: `${val}%`, 
+                           backgroundColor: asset.isUp ? '#00e297' : '#ffb4ab',
+                           opacity: 0.3 + (j / asset.graph.length) * 0.7 
+                        }} />
+                      ))}
                     </div>
                   </div>
                 ))}

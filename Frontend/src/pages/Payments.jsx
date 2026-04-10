@@ -155,18 +155,7 @@ export default function Payments() {
                 </button>
               </div>
 
-              {/* Security Widget */}
-              <div className="bg-[#2a2a2b] rounded-xl p-6 relative overflow-hidden">
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 text-[#00e297] mb-2">
-                    <span className="material-symbols-outlined text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest">Secure Flow Active</span>
-                  </div>
-                  <h5 className="text-sm font-bold mb-2">Multi-Path Verification</h5>
-                  <p className="text-xs text-[#bac9cc] leading-relaxed">Your transfer is protected by Nexus' signature zero-knowledge pathing, ensuring privacy and atomic finality.</p>
-                </div>
-                <div className="absolute -right-12 -bottom-12 w-32 h-32 bg-cyan-400/10 blur-[50px] rounded-full" />
-              </div>
+
 
               {/* USDC Liquidity Sparkline */}
               <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5">

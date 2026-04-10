@@ -1,7 +1,18 @@
+import React, { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import TopBar from '../components/TopBar'
 
 export default function Profile() {
+  const [activeTheme, setActiveTheme] = useState('Obsidian')
+
+  useEffect(() => {
+    document.body.classList.remove('theme-light', 'theme-ocean')
+    if (activeTheme === 'Neon White') {
+      document.body.classList.add('theme-light')
+    } else if (activeTheme === 'Cyber Ocean') {
+      document.body.classList.add('theme-ocean')
+    }
+  }, [activeTheme])
   return (
     <div className="bg-[#131314] text-[#e5e2e3] min-h-screen">
       <TopBar showSearch />
@@ -44,7 +55,7 @@ export default function Profile() {
         <div className="grid grid-cols-12 gap-6">
 
           {/* Linked Wallets */}
-          <div className="col-span-12 lg:col-span-8 bg-[#1c1b1c] rounded-xl p-8 border border-[#3b494c]/15">
+          <div className="col-span-12 bg-[#1c1b1c] rounded-xl p-8 border border-[#3b494c]/15">
             <div className="flex justify-between items-center mb-8">
               <h3 className="text-xl font-headline font-bold">Linked Wallets</h3>
               <button className="text-[#00daf3] text-sm font-bold flex items-center gap-1 hover:text-[#c3f5ff] transition-colors">
@@ -77,22 +88,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Tax Export */}
-          <div className="col-span-12 lg:col-span-4 bg-[#00e5ff] text-[#00363d] rounded-xl p-8 flex flex-col justify-between relative overflow-hidden">
-            <div className="absolute -right-4 -top-4 opacity-10">
-              <span className="material-symbols-outlined text-[120px]">database</span>
-            </div>
-            <div>
-              <h3 className="text-xl font-headline font-black leading-tight mb-2">Tax Season Ready</h3>
-              <p className="text-sm font-medium opacity-80 mb-6">Export your full transaction history for easy reporting.</p>
-            </div>
-            <button
-              id="export-csv-btn"
-              className="bg-[#00363d] text-[#00e5ff] w-full py-4 rounded-xl font-black text-sm uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-neutral-900 transition-colors"
-            >
-              <span className="material-symbols-outlined text-base">download</span> Export CSV
-            </button>
-          </div>
 
           {/* Notification Settings */}
           <div className="col-span-12 lg:col-span-6 bg-[#1c1b1c] rounded-xl p-8 border border-[#3b494c]/15">
@@ -152,17 +147,20 @@ export default function Profile() {
               <div className="h-12 w-px bg-[#3b494c]/20" />
               <div className="flex items-center gap-4">
                 {[
-                  { theme: 'Obsidian', icon: 'dark_mode', bg: 'bg-neutral-900', iconColor: 'text-[#00e5ff]', active: true },
-                  { theme: 'Neon White', icon: 'light_mode', bg: 'bg-neutral-100', iconColor: 'text-neutral-900', active: false },
-                  { theme: 'Cyber Ocean', icon: 'palette', bg: 'bg-gradient-to-br from-neutral-900 to-cyan-900', iconColor: 'text-cyan-200', active: false },
-                ].map((t, i) => (
-                  <div key={i} className={`flex flex-col items-center gap-2 group cursor-pointer ${!t.active ? 'opacity-40 hover:opacity-100 transition-opacity' : ''}`}>
-                    <div className={`w-16 h-12 ${t.bg} border-2 ${t.active ? 'border-[#00e5ff]' : 'border-[#3b494c]/20'} rounded-lg flex items-center justify-center`}>
-                      <span className={`material-symbols-outlined ${t.iconColor}`}>{t.icon}</span>
+                  { theme: 'Obsidian', icon: 'dark_mode', bg: 'bg-neutral-900', iconColor: 'text-[#00e5ff]' },
+                  { theme: 'Neon White', icon: 'light_mode', bg: 'bg-neutral-100', iconColor: 'text-neutral-900' },
+                  { theme: 'Cyber Ocean', icon: 'palette', bg: 'bg-gradient-to-br from-neutral-900 to-cyan-900', iconColor: 'text-cyan-200' },
+                ].map((t, i) => {
+                  const isActive = activeTheme === t.theme
+                  return (
+                    <div key={i} onClick={() => setActiveTheme(t.theme)} className={`flex flex-col items-center gap-2 group cursor-pointer ${!isActive ? 'opacity-40 hover:opacity-100 transition-opacity' : ''}`}>
+                      <div className={`w-16 h-12 ${t.bg} border-2 ${isActive ? 'border-[#00e5ff]' : 'border-[#3b494c]/20'} rounded-lg flex items-center justify-center`}>
+                        <span className={`material-symbols-outlined ${t.iconColor}`}>{t.icon}</span>
+                      </div>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${isActive ? 'text-[#00e5ff]' : ''}`}>{t.theme}</span>
                     </div>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${t.active ? 'text-[#00e5ff]' : ''}`}>{t.theme}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
             <div className="flex items-center gap-4">

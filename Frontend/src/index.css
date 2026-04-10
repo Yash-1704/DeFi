@@ -65,3 +65,19 @@ body {
 .font-headline {
   font-family: 'Manrope', sans-serif;
 }
+
+/* Theme Classes */
+body.theme-light {
+  filter: invert(1) hue-rotate(180deg);
+  background-color: #f5f5f5 !important;
+}
+
+body.theme-light img, 
+body.theme-light video, 
+body.theme-light .material-symbols-outlined {
+  /* Keep icons their original color by un-inverting them, or let them be inverted if colors become weird. Usually hue-rotate keeps them okay. */
+}
+
+body.theme-ocean {
+  filter: hue-rotate(20deg) saturate(1.2);
+}
