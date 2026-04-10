@@ -1,7 +1,20 @@
 import React, { useState } from 'react'
 import Sidebar from '../components/Sidebar'
 import TopBar from '../components/TopBar'
+const [groups, setGroups] = useState([]);
+const [selectedGroup, setSelectedGroup] = useState(null);
+const [balances, setBalances] = useState(null);
+const [members, setMembers] = useState([]);
+const [amount, setAmount] = useState("");
+const [paidBy, setPaidBy] = useState("");
 
+import { useEffect } from "react";
+
+useEffect(() => {
+  fetch("http://localhost:5000/groups")
+    .then(res => res.json())
+    .then(data => setGroups(data));
+}, []);
 export default function SplitCoin() {
   const [activeTab, setActiveTab] = useState('dashboard') // dashboard, group, expense, balances, settlement
   const [expenses, setExpenses] = useState([

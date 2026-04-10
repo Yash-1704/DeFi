@@ -11,6 +11,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const groupRoutes = require("./routes/groupRoutes");
+const expenseRoutes = require("./routes/expenseRoutes");
+
+app.use("/groups", groupRoutes);
+app.use("/expenses", expenseRoutes);
 // Routes
 app.use("/api/users", require("./routes/userRoutes"));
 
