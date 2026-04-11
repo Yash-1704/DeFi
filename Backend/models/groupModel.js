@@ -14,6 +14,10 @@ const groupSchema = new mongoose.Schema({
       type: String // wallet addresses
     }
   ],
+  pendingMembers: {
+    type: [String],
+    default: []
+  },
   contributions: {
     type: Map,
     of: Number,

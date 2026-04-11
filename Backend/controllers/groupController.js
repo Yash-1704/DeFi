@@ -23,8 +23,13 @@ exports.createGroup = async (req, res) => {
 // ── Get all groups (optionally filter by member) ───────────────
 exports.getGroups = async (req, res) => {
   try {
-    const { member } = req.query;
-    const filter = member ? { members: { $in: [member.toLowerCase()] } } : {};
+    const { member, pendingMember } = req.query;
+    let filter = {};
+    if (member) {
+      filter = { members: { $in: [member.toLowerCase()] } };
+    } else if (pendingMember) {
+      filter = { pendingMembers: { $in: [pendingMember.toLowerCase()] } };
+    }
     const groups = await Group.find(filter).sort({ createdAt: -1 });
     res.json(groups);
   } catch (err) {
@@ -43,7 +48,7 @@ exports.getGroupById = async (req, res) => {
   }
 };
 
-// ── Add member ─────────────────────────────────────────────────
+// ── Add member invite ──────────────────────────────────────────
 exports.addMember = async (req, res) => {
   try {
     const { walletAddress } = req.body;
@@ -55,13 +60,64 @@ exports.addMember = async (req, res) => {
     const group = await Group.findById(req.params.id);
     if (!group) return res.status(404).json({ error: "Group not found" });
 
-    // Prevent duplicates
-    const already = group.members.map(m => m.toLowerCase());
-    if (already.includes(addr)) {
+    const isMember = group.members.map(m => m.toLowerCase()).includes(addr);
+    const alreadyPending = group.pendingMembers.map(m => m.toLowerCase()).includes(addr);
+    if (isMember) {
       return res.status(400).json({ error: "Member already exists in this group" });
     }
+    if (alreadyPending) {
+      return res.status(400).json({ error: "Invite already pending for this member" });
+    }
 
-    group.members.push(addr);
+    group.pendingMembers.push(addr);
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── Confirm invited member ────────────────────────────────────
+exports.confirmMember = async (req, res) => {
+  try {
+    const { walletAddress } = req.body;
+    if (!walletAddress) {
+      return res.status(400).json({ error: "walletAddress is required" });
+    }
+
+    const addr = walletAddress.toLowerCase();
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    const pendingIndex = group.pendingMembers.map(m => m.toLowerCase()).indexOf(addr);
+    if (pendingIndex === -1) {
+      return res.status(400).json({ error: "No pending invite found for this member" });
+    }
+
+    group.pendingMembers.splice(pendingIndex, 1);
+    if (!group.members.map(m => m.toLowerCase()).includes(addr)) {
+      group.members.push(addr);
+    }
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── Decline invited member ────────────────────────────────────
+exports.declineMember = async (req, res) => {
+  try {
+    const { walletAddress } = req.body;
+    if (!walletAddress) {
+      return res.status(400).json({ error: "walletAddress is required" });
+    }
+
+    const addr = walletAddress.toLowerCase();
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    group.pendingMembers = group.pendingMembers.filter(m => m.toLowerCase() !== addr);
     await group.save();
     res.json(group);
   } catch (err) {

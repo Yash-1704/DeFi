@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
+import { ethers } from 'ethers'
 import Sidebar from '../components/Sidebar'
 import TopBar from '../components/TopBar'
 import { useWallet } from '../hooks/useWallet'
 import { addTransaction, getTransactions } from '../services/api'
 
 export default function Payments() {
-  const { walletAddress, isConnected } = useWallet()
+  const { walletAddress, isConnected, signer } = useWallet()
 
   const [recipient,  setRecipient]  = useState('')
   const [amount,     setAmount]     = useState('')
@@ -28,25 +29,40 @@ export default function Payments() {
   const handleSend = async (e) => {
     e.preventDefault()
     if (!isConnected)  { setTxMsg({ type: 'error', text: 'Please connect your wallet first.' }); return }
+    if (!signer)       { setTxMsg({ type: 'error', text: 'Wallet signer not available.' }); return }
     if (!recipient)    { setTxMsg({ type: 'error', text: 'Please enter a recipient address.' }); return }
+    if (!ethers.utils.isAddress(recipient)) { setTxMsg({ type: 'error', text: 'Invalid Ethereum address.' }); return }
     if (!amount || parseFloat(amount) <= 0) { setTxMsg({ type: 'error', text: 'Please enter a valid amount.' }); return }
 
     setSending(true)
-    setTxMsg({ type: '', text: '' })
+    setTxMsg({ type: 'info', text: 'Waiting for MetaMask confirmation...' })
     try {
+      // Broadcast real on-chain transaction
+      const tx = await signer.sendTransaction({
+        to:    recipient,
+        value: ethers.utils.parseEther(amount),
+      })
+      setTxMsg({ type: 'info', text: `Transaction submitted. Waiting for confirmation...` })
+      const receipt = await tx.wait()
+
+      // Persist to backend with tx hash
       await addTransaction({
         walletAddress,
-        to: recipient,
-        amount: parseFloat(amount),
-        type: 'send',
+        to:        recipient,
+        amount:    parseFloat(amount),
+        type:      'send',
+        txHash:    receipt.transactionHash,
         timestamp: new Date().toISOString(),
       })
-      setTxMsg({ type: 'success', text: `Sent ${amount} ETH to ${recipient.slice(0, 10)}...` })
+
+      setTxMsg({ type: 'success', text: `Sent ${amount} ETH to ${recipient.slice(0, 10)}... · TX: ${receipt.transactionHash.slice(0, 14)}...` })
       setRecipient('')
       setAmount('')
       loadActivity()
     } catch (err) {
-      setTxMsg({ type: 'error', text: err.message || 'Transaction failed.' })
+      if (err.code === 4001) setTxMsg({ type: 'error', text: 'Transaction rejected by user.' })
+      else if (err.code === 'INSUFFICIENT_FUNDS') setTxMsg({ type: 'error', text: 'Insufficient ETH balance.' })
+      else setTxMsg({ type: 'error', text: err.message || 'Transaction failed.' })
     } finally {
       setSending(false)
     }
@@ -176,6 +192,7 @@ export default function Payments() {
                 {txMsg.text && (
                   <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${
                     txMsg.type === 'success' ? 'bg-[#00e297]/10 text-[#00e297] border border-[#00e297]/20'
+                    : txMsg.type === 'info'  ? 'bg-[#00daf3]/10 text-[#00daf3] border border-[#00daf3]/20'
                     : 'bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20'
                   }`}>
                     {txMsg.text}
@@ -190,7 +207,7 @@ export default function Payments() {
                   className="w-full py-5 rounded-xl bg-gradient-to-r from-[#c3f5ff] to-[#00e5ff] text-[#00363d] font-black text-lg tracking-tight hover:scale-[1.01] active:scale-[0.98] transition-all uppercase disabled:opacity-50"
                   style={{ boxShadow: '0 20px 40px rgba(0,229,255,0.1)' }}
                 >
-                  {sending ? 'Recording...' : 'Authorize Transfer'}
+                  {sending ? 'Sending...' : 'Authorize Transfer'}
                 </button>
               </form>
             </div>

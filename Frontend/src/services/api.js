@@ -76,6 +76,30 @@ export const getGroupsByMember = async (address) => {
   return handleResponse(res);
 };
 
+export const getPendingGroupInvites = async (address) => {
+  if (!address) return [];
+  const res = await fetch(`${BASE_URL}/groups?pendingMember=${address}`);
+  return handleResponse(res);
+};
+
+export const confirmGroupInvite = async (groupId, walletAddress) => {
+  const res = await fetch(`${BASE_URL}/groups/${groupId}/members/confirm`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ walletAddress }),
+  });
+  return handleResponse(res);
+};
+
+export const declineGroupInvite = async (groupId, walletAddress) => {
+  const res = await fetch(`${BASE_URL}/groups/${groupId}/members/decline`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ walletAddress }),
+  });
+  return handleResponse(res);
+};
+
 export const addGroupMember = async (groupId, walletAddress) => {
   const res = await fetch(`${BASE_URL}/groups/${groupId}/members`, {
     method: "POST",

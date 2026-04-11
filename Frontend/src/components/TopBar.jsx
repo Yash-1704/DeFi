@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useWallet } from '../hooks/useWallet'
+import { getPendingGroupInvites, confirmGroupInvite, declineGroupInvite } from '../services/api'
 
 const truncate = (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : ''
 
@@ -13,6 +15,30 @@ export default function TopBar({ title, subtitle, showSearch = false }) {
   const navigate = useNavigate()
   const location = useLocation()
   const { walletAddress, isConnected, disconnectWallet } = useWallet()
+
+  const [pendingInvites, setPendingInvites] = useState([])
+  const [showInvites, setShowInvites] = useState(false)
+  const [inviteLoading, setInviteLoading] = useState(false)
+
+  const fetchInvites = async () => {
+    if (!isConnected || !walletAddress) {
+      setPendingInvites([])
+      return
+    }
+    setInviteLoading(true)
+    try {
+      const invites = await getPendingGroupInvites(walletAddress)
+      setPendingInvites(invites)
+    } catch (err) {
+      setPendingInvites([])
+    } finally {
+      setInviteLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchInvites()
+  }, [isConnected, walletAddress])
 
   const handleWalletBtn = () => {
     if (isConnected) {
@@ -71,11 +97,65 @@ export default function TopBar({ title, subtitle, showSearch = false }) {
               Connect Wallet
             </button>
           )}
-          <button className="p-1 text-neutral-400 hover:text-cyan-400 transition-colors">
-            <span className="material-symbols-outlined">notifications</span>
-          </button>
-          <div className="w-8 h-8 rounded-full bg-[#2a2a2b] border border-[#3b494c]/20 flex items-center justify-center text-cyan-400 font-bold text-xs font-headline">
-            NX
+          <div className="relative">
+            <button
+              onClick={() => setShowInvites(prev => !prev)}
+              className="p-1 text-neutral-400 hover:text-cyan-400 transition-colors"
+            >
+              <span className="material-symbols-outlined">notifications</span>
+              {pendingInvites.length > 0 && (
+                <span className="absolute -top-1 -right-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#00e297] text-[10px] text-[#031b14] font-bold px-1">
+                  {pendingInvites.length}
+                </span>
+              )}
+            </button>
+            {showInvites && (
+              <div className="absolute right-0 mt-2 w-72 rounded-2xl bg-[#0f1011] border border-[#3b494c]/30 shadow-[0_15px_40px_rgba(0,0,0,0.25)] text-sm z-50 overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#3b494c]/20 bg-[#141517] font-semibold text-neutral-200">Group Invites</div>
+                <div className="max-h-72 overflow-y-auto">
+                  {inviteLoading ? (
+                    <div className="px-4 py-4 text-neutral-500">Loading invites...</div>
+                  ) : pendingInvites.length === 0 ? (
+                    <div className="px-4 py-4 text-neutral-500">No pending invites.</div>
+                  ) : (
+                    pendingInvites.map(invite => (
+                      <div key={invite._id} className="px-4 py-3 border-b border-[#3b494c]/20 last:border-b-0">
+                        <p className="text-sm font-semibold text-[#e5e2e3]">{invite.name}</p>
+                        <p className="text-[11px] text-neutral-500 truncate">Invite to join {invite.name}</p>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={async () => {
+                              try {
+                                await confirmGroupInvite(invite._id, walletAddress)
+                                await fetchInvites()
+                              } catch (err) {
+                                console.error(err)
+                              }
+                            }}
+                            className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-widest rounded-lg bg-[#00daf3]/10 text-[#00daf3] hover:bg-[#00daf3]/20 transition-colors"
+                          >
+                            Accept
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await declineGroupInvite(invite._id, walletAddress)
+                                await fetchInvites()
+                              } catch (err) {
+                                console.error(err)
+                              }
+                            }}
+                            className="flex-1 px-3 py-2 text-xs font-bold uppercase tracking-widest rounded-lg bg-[#ffb4ab]/10 text-[#ffb4ab] hover:bg-[#ffb4ab]/20 transition-colors"
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </header>
