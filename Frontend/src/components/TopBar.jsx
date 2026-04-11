@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAddress } from '@thirdweb-dev/react'
 
 const mobileNav = [
   { path: '/dashboard', label: 'Dash', icon: 'dashboard' },
@@ -9,6 +10,7 @@ const mobileNav = [
 export default function TopBar({ title, subtitle, showSearch = false }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const address = useAddress()
 
   return (
     <>
@@ -40,12 +42,22 @@ export default function TopBar({ title, subtitle, showSearch = false }) {
             <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
             Ethereum
           </button>
-          <button
-            id="connect-wallet-btn"
-            className="px-5 py-2 bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] rounded-full text-sm font-bold tracking-tight active:scale-90 transition-all duration-200 hover:opacity-90"
-          >
-            Connect Wallet
-          </button>
+          {address ? (
+            <button
+              id="wallet-connected-btn"
+              className="px-5 py-2 bg-green-500 text-white rounded-full text-sm font-bold tracking-tight active:scale-90 transition-all duration-200 hover:opacity-90"
+            >
+              Wallet connected
+            </button>
+          ) : (
+            <button
+              id="connect-wallet-btn"
+              onClick={() => navigate('/')}
+              className="px-5 py-2 bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] rounded-full text-sm font-bold tracking-tight active:scale-90 transition-all duration-200 hover:opacity-90"
+            >
+              Connect Wallet
+            </button>
+          )}
           <button className="p-1 text-neutral-400 hover:text-cyan-400 transition-colors">
             <span className="material-symbols-outlined">notifications</span>
           </button>

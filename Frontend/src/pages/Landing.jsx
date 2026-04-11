@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAddress, useConnect, metamaskWallet } from '@thirdweb-dev/react'
+import logoUrl from '../assets/Logo.jpeg'
 
 const metamaskConfig = metamaskWallet()
 
@@ -77,6 +78,9 @@ export default function Landing() {
       <nav className="fixed top-0 w-full z-50 bg-[#131314]/80 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,229,255,0.04)]">
         <div className="flex justify-between items-center px-10 py-6 max-w-[1440px] mx-auto">
           <div className="flex items-center gap-2">
+            <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-[#00e5ff]/20">
+              <img src={logoUrl} alt="ZenETH" className="w-full h-full object-cover" />
+            </div>
             <span className="text-xl font-bold tracking-tighter text-[#c3f5ff] font-headline uppercase">ZenETH</span>
           </div>
           <div className="hidden md:flex items-center space-x-10 font-headline tracking-tight font-semibold">
@@ -85,13 +89,23 @@ export default function Landing() {
             <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Explore</a>
             <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Docs</a>
           </div>
-          <button
-            id="landing-connect-btn"
-            onClick={handleConnectClick}
-            className="bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] px-8 py-3 rounded-xl font-headline font-bold text-sm tracking-tight active:scale-95 duration-200 cursor-pointer shadow-lg shadow-[#c3f5ff]/10 hover:opacity-90"
-          >
-            Connect Wallet
-          </button>
+          {address ? (
+            <button
+              id="landing-wallet-connected-btn"
+              onClick={() => navigate('/dashboard')}
+              className="px-8 py-3 bg-green-500 text-white rounded-xl font-headline font-bold text-sm tracking-tight active:scale-95 duration-200 cursor-pointer shadow-lg hover:opacity-90"
+            >
+              Wallet connected
+            </button>
+          ) : (
+            <button
+              id="landing-connect-btn"
+              onClick={handleConnectClick}
+              className="bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] px-8 py-3 rounded-xl font-headline font-bold text-sm tracking-tight active:scale-95 duration-200 cursor-pointer shadow-lg shadow-[#c3f5ff]/10 hover:opacity-90"
+            >
+              Connect Wallet
+            </button>
+          )}
         </div>
       </nav>
 

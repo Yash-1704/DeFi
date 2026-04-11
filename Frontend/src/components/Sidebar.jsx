@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import logoUrl from '../assets/Logo.jpeg'
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: 'dashboard' },
@@ -17,8 +18,8 @@ export default function Sidebar() {
     <aside className="fixed left-0 top-0 h-screen w-64 z-40 bg-neutral-900/60 backdrop-blur-2xl shadow-2xl flex flex-col pt-16 pb-8 gap-4 hidden md:flex">
       <div className="px-6 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] flex items-center justify-center">
-            <span className="material-symbols-outlined text-[#00363d] text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>architecture</span>
+          <div className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-[#00e5ff]/20">
+            <img src={logoUrl} alt="ZenETH" className="w-full h-full object-cover" />
           </div>
           <div>
             <p className="text-xl font-black text-cyan-400 font-headline tracking-tighter">ZenETH</p>

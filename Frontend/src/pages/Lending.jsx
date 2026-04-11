@@ -25,22 +25,6 @@ export default function Lending() {
             <h2 className="text-4xl font-headline font-bold tracking-tight text-[#e5e2e3]">Lending Market</h2>
             <p className="text-[#bac9cc] font-body mt-1">Deploy capital and architect your liquidity strategy.</p>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="bg-[#2a2a2b] px-4 py-2 rounded-full border border-[#3b494c]/15 flex items-center gap-2 hover:bg-[#3a393a] transition-all">
-              <span className="material-symbols-outlined text-sm">public</span>
-              <span className="text-sm font-label font-semibold">Ethereum</span>
-            </button>
-            <button
-              id="lending-connect-wallet"
-              className="bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] font-label font-bold px-6 py-2.5 rounded-xl hover:scale-[1.02] active:scale-95 transition-all"
-              style={{ boxShadow: '0 0 20px 0 rgba(0,229,255,0.2)' }}
-            >
-              Connect Wallet
-            </button>
-            <button className="w-10 h-10 rounded-full bg-[#2a2a2b] flex items-center justify-center text-[#bac9cc] hover:text-[#c3f5ff] transition-colors">
-              <span className="material-symbols-outlined">notifications</span>
-            </button>
-          </div>
         </header>
 
         {/* My Positions Bento */}
