@@ -1,17 +1,47 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Sidebar from '../components/Sidebar'
 import TopBar from '../components/TopBar'
+import { useWallet } from '../hooks/useWallet'
+import { getTransactions } from '../services/api'
 
-const txData = [
-  { status: 'Success', statusColor: 'text-[#00e297]', method: 'Swap', methodIcon: 'swap_horiz', methodColor: 'text-cyan-400', methodBg: 'bg-cyan-400/10', asset: 'ETH → USDC', amount: '1.45 ETH', usd: '$3,420.12', to: '0x71C...3E4d', date: 'Oct 24, 2023', time: '14:22:10 PM', hash: '0x4a2...8f1' },
-  { status: 'Failed', statusColor: 'text-[#ffb4ab]', method: 'Sent', methodIcon: 'send', methodColor: 'text-red-400', methodBg: 'bg-red-400/10', asset: 'WBTC', amount: '0.05 WBTC', usd: '$1,750.00', to: '0x12A...9B2c', date: 'Oct 23, 2023', time: '09:15:44 AM', hash: '0x8d3...1e2' },
-  { status: 'Success', statusColor: 'text-[#00e297]', method: 'Staked', methodIcon: 'lock', methodColor: 'text-emerald-400', methodBg: 'bg-emerald-400/10', asset: 'DOT', amount: '500.00 DOT', usd: '$2,100.50', to: 'Nexus Pool v3', date: 'Oct 21, 2023', time: '22:01:05 PM', hash: '0xf41...a2d' },
-  { status: 'Success', statusColor: 'text-[#00e297]', method: 'Received', methodIcon: 'download', methodColor: 'text-blue-400', methodBg: 'bg-blue-400/10', asset: 'USDC', amount: '+ 10,000 USDC', usd: '$10,000.00', to: '0x49B...1F2a', date: 'Oct 20, 2023', time: '11:45:12 AM', hash: '0x2b5...3c8' },
-]
+const METHOD_MAP = {
+  send:    { icon: 'send',       color: 'text-red-400',     bg: 'bg-red-400/10',     label: 'Sent' },
+  receive: { icon: 'download',   color: 'text-blue-400',    bg: 'bg-blue-400/10',    label: 'Received' },
+  stake:   { icon: 'lock',       color: 'text-emerald-400', bg: 'bg-emerald-400/10', label: 'Staked' },
+  unstake: { icon: 'lock_open',  color: 'text-cyan-400',    bg: 'bg-cyan-400/10',    label: 'Unstaked' },
+  deposit: { icon: 'savings',    color: 'text-indigo-400',  bg: 'bg-indigo-400/10',  label: 'Deposited' },
+  withdraw:{ icon: 'upload',     color: 'text-orange-400',  bg: 'bg-orange-400/10',  label: 'Withdrawn' },
+  swap:    { icon: 'swap_horiz', color: 'text-cyan-400',    bg: 'bg-cyan-400/10',    label: 'Swap' },
+}
+const defaultMethod = { icon: 'receipt_long', color: 'text-neutral-400', bg: 'bg-neutral-800', label: 'TX' }
 
 export default function Transactions() {
-  const [filter, setFilter] = useState('All')
+  const { walletAddress, isConnected } = useWallet()
+  const [allTxs,   setAllTxs]   = useState([])
+  const [loading,  setLoading]  = useState(false)
+  const [filter,   setFilter]   = useState('All')
   const filters = ['All', 'Outgoing', 'Incoming']
+
+  useEffect(() => {
+    if (!walletAddress) return
+    setLoading(true)
+    getTransactions(walletAddress)
+      .then(data => setAllTxs(Array.isArray(data) ? data : []))
+      .catch(() => setAllTxs([]))
+      .finally(() => setLoading(false))
+  }, [walletAddress])
+
+  const filtered = useMemo(() => {
+    if (filter === 'Outgoing') return allTxs.filter(t => t.type === 'send' || t.type === 'deposit' || t.type === 'stake')
+    if (filter === 'Incoming') return allTxs.filter(t => t.type === 'receive' || t.type === 'withdraw' || t.type === 'unstake')
+    return allTxs
+  }, [allTxs, filter])
+
+  const totalVolume = useMemo(() =>
+    allTxs.reduce((acc, t) => acc + (parseFloat(t.amount) || 0), 0).toFixed(4),
+  [allTxs])
+
+  const successCount = allTxs.length
 
   return (
     <div className="bg-[#131314] text-[#e5e2e3] min-h-screen">
@@ -25,7 +55,7 @@ export default function Transactions() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
             <div>
               <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-[#e5e2e3] mb-2">Transactions</h1>
-              <p className="text-[#bac9cc] font-body">Real-time chronicle of your on-chain interactions across the Nexus ecosystem.</p>
+              <p className="text-[#bac9cc] font-body">Real-time chronicle of your on-chain interactions.</p>
             </div>
             <div className="flex flex-wrap items-center gap-3 bg-[#1c1b1c] p-1 rounded-full">
               {filters.map(f => (
@@ -43,25 +73,18 @@ export default function Transactions() {
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             {[
-              { label: 'Total Volume', value: '$1,284,592.00', sub: '+12.4%', subColor: 'text-[#00e297]', subIcon: 'trending_up' },
-              { label: 'Successful TXs', value: '482', sub: '99.8% Success Rate', subColor: 'text-neutral-500' },
-              { label: 'Gas Expended', value: '0.42 ETH', sub: 'Avg. 12 Gwei', subColor: 'text-neutral-500' },
+              { label: 'Total Volume', value: `${totalVolume} ETH`, sub: `${allTxs.length} transactions`, subColor: 'text-neutral-500', subIcon: null },
+              { label: 'Successful TXs', value: successCount.toString(), sub: successCount > 0 ? '100% Success Rate' : 'No transactions yet', subColor: 'text-neutral-500' },
+              { label: 'Wallet', value: isConnected ? `${walletAddress.slice(0,6)}...${walletAddress.slice(-4)}` : '—', sub: isConnected ? 'Connected' : 'Not connected', subColor: isConnected ? 'text-[#00e297]' : 'text-neutral-500' },
             ].map((s, i) => (
-              <div key={i} className={`bg-[#201f20] rounded-xl p-6 relative overflow-hidden group ${s.isReputation ? 'border border-cyan-400/10' : ''}`}>
+              <div key={i} className="bg-[#201f20] rounded-xl p-6 relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                <div className={`text-[10px] font-bold uppercase tracking-widest mb-4 ${s.isReputation ? 'text-cyan-400' : 'text-neutral-500'}`}>{s.label}</div>
-                <div className={`text-3xl font-bold tracking-tighter ${s.isReputation ? 'text-cyan-400' : 'text-[#e5e2e3]'}`}>{s.value}</div>
-                {s.sub && !s.isReputation && (
-                  <div className={`flex items-center gap-1 text-xs mt-2 font-bold ${s.subColor}`}>
-                    {s.subIcon && <span className="material-symbols-outlined text-sm">{s.subIcon}</span>}
-                    {s.sub}
-                  </div>
-                )}
-                {s.isReputation && (
-                  <div className="mt-3 w-full bg-neutral-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-cyan-400 to-[#00e297] h-full w-[92%]" />
-                  </div>
-                )}
+                <div className="text-[10px] font-bold uppercase tracking-widest mb-4 text-neutral-500">{s.label}</div>
+                <div className="text-3xl font-bold tracking-tighter text-[#e5e2e3]">{s.value}</div>
+                <div className={`flex items-center gap-1 text-xs mt-2 font-bold ${s.subColor}`}>
+                  {s.subIcon && <span className="material-symbols-outlined text-sm">{s.subIcon}</span>}
+                  {s.sub}
+                </div>
               </div>
             ))}
           </div>
@@ -69,78 +92,72 @@ export default function Transactions() {
           {/* Table */}
           <div className="bg-[#0e0e0f] rounded-xl overflow-hidden shadow-2xl border border-[#3b494c]/10">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-[#2a2a2b]/50">
-                  <tr>
-                    {['Status', 'Method', 'Asset', 'Amount', 'To / From', 'Date & Time', 'Hash'].map((h, i) => (
-                      <th key={i} className={`px-6 py-5 text-[10px] font-bold uppercase tracking-widest text-neutral-500 ${i === 6 ? 'text-right' : ''}`}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-800/30">
-                  {txData.map((tx, i) => (
-                    <tr key={i} className="hover:bg-[#3a393a]/20 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className={`flex items-center gap-2 ${tx.statusColor}`}>
-                          <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
-                            {tx.status === 'Success' ? 'check_circle' : 'cancel'}
-                          </span>
-                          <span className="text-xs font-bold uppercase tracking-wider">{tx.status}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-lg ${tx.methodBg} flex items-center justify-center`}>
-                            <span className={`material-symbols-outlined ${tx.methodColor} text-sm`}>{tx.methodIcon}</span>
-                          </div>
-                          <span className="text-sm font-semibold text-[#e5e2e3]">{tx.method}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded-full bg-neutral-800 overflow-hidden flex items-center justify-center">
-                            <span className="material-symbols-outlined text-[#00daf3] text-xs">token</span>
-                          </div>
-                          <span className="text-sm font-medium">{tx.asset}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-bold text-[#e5e2e3]">{tx.amount}</div>
-                        <div className="text-[10px] text-neutral-500">{tx.usd}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 font-mono text-xs text-[#bac9cc]">
-                          {tx.to}
-                          <span className="material-symbols-outlined text-[10px] cursor-pointer hover:text-cyan-400">content_copy</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-xs text-[#e5e2e3] font-medium">{tx.date}</div>
-                        <div className="text-[10px] text-neutral-500">{tx.time}</div>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <a className="text-cyan-400 hover:text-cyan-200 transition-colors inline-flex items-center gap-1 text-xs font-bold cursor-pointer">
-                          {tx.hash} <span className="material-symbols-outlined text-xs">open_in_new</span>
-                        </a>
-                      </td>
+              {loading ? (
+                <div className="p-12 text-center text-neutral-500">Loading transactions...</div>
+              ) : !isConnected ? (
+                <div className="p-12 text-center text-neutral-500">Connect your wallet to view transactions.</div>
+              ) : filtered.length === 0 ? (
+                <div className="p-12 text-center text-neutral-500">No transactions found.</div>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-[#2a2a2b]/50">
+                    <tr>
+                      {['Status', 'Method', 'Amount', 'To / From', 'Date & Time', 'Hash'].map((h, i) => (
+                        <th key={i} className={`px-6 py-5 text-[10px] font-bold uppercase tracking-widest text-neutral-500 ${i === 5 ? 'text-right' : ''}`}>{h}</th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-800/30">
+                    {filtered.map((tx, i) => {
+                      const m = METHOD_MAP[tx.type] || defaultMethod
+                      return (
+                        <tr key={tx._id || i} className="hover:bg-[#3a393a]/20 transition-colors">
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2 text-[#00e297]">
+                              <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                              <span className="text-xs font-bold uppercase tracking-wider">Success</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-8 h-8 rounded-lg ${m.bg} flex items-center justify-center`}>
+                                <span className={`material-symbols-outlined ${m.color} text-sm`}>{m.icon}</span>
+                              </div>
+                              <span className="text-sm font-semibold text-[#e5e2e3]">{m.label}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-bold text-[#e5e2e3]">{tx.amount} ETH</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-2 font-mono text-xs text-[#bac9cc]">
+                              {tx.to ? `${tx.to.slice(0, 6)}...${tx.to.slice(-4)}` : '—'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-xs text-[#e5e2e3] font-medium">
+                              {tx.timestamp ? new Date(tx.timestamp).toLocaleDateString() : '—'}
+                            </div>
+                            <div className="text-[10px] text-neutral-500">
+                              {tx.timestamp ? new Date(tx.timestamp).toLocaleTimeString() : ''}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <span className="text-cyan-400 text-xs font-bold font-mono">
+                              {tx.txHash ? `${tx.txHash.slice(0, 10)}...` : tx._id ? `${tx._id.slice(-8)}` : '—'}
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              )}
             </div>
-            {/* Pagination */}
+            {/* Pagination info */}
             <div className="bg-[#2a2a2b]/30 px-6 py-4 flex items-center justify-between">
-              <div className="text-xs text-neutral-500 font-medium">Showing 1-10 of 482 transactions</div>
-              <div className="flex items-center gap-2">
-                <button className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-800 hover:text-[#e5e2e3] transition-all">
-                  <span className="material-symbols-outlined text-sm">chevron_left</span>
-                </button>
-                {[1, 2, 3].map(n => (
-                  <button key={n} className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${n === 1 ? 'bg-cyan-400 text-[#00363d]' : 'text-neutral-400 hover:bg-neutral-800'}`}>{n}</button>
-                ))}
-                <button className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:bg-neutral-800 hover:text-[#e5e2e3] transition-all">
-                  <span className="material-symbols-outlined text-sm">chevron_right</span>
-                </button>
+              <div className="text-xs text-neutral-500 font-medium">
+                Showing {filtered.length} of {allTxs.length} transactions
               </div>
             </div>
           </div>
@@ -180,12 +197,6 @@ export default function Transactions() {
                   <button className="flex items-center justify-center gap-2 py-3 bg-[#2a2a2b] rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-[#3a393a] transition-all">
                     <span className="material-symbols-outlined text-sm">picture_as_pdf</span> PDF Report
                   </button>
-                </div>
-              </div>
-              <div className="relative z-10 mt-6 pt-6 border-t border-neutral-800/50">
-                <div className="flex items-center justify-between text-xs font-bold text-neutral-500">
-                  <span>LAST EXPORT</span>
-                  <span className="text-cyan-400">2 DAYS AGO</span>
                 </div>
               </div>
             </div>

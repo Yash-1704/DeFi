@@ -1,7 +1,57 @@
+import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import TopBar from '../components/TopBar'
+import { useWallet } from '../hooks/useWallet'
+import { addTransaction, getTransactions } from '../services/api'
 
 export default function Payments() {
+  const { walletAddress, isConnected } = useWallet()
+
+  const [recipient,  setRecipient]  = useState('')
+  const [amount,     setAmount]     = useState('')
+  const [sending,    setSending]    = useState(false)
+  const [txMsg,      setTxMsg]      = useState({ type: '', text: '' })
+  const [recentTxs,  setRecentTxs]  = useState([])
+  const [txLoading,  setTxLoading]  = useState(false)
+
+  const loadActivity = () => {
+    if (!walletAddress) return
+    setTxLoading(true)
+    getTransactions(walletAddress)
+      .then(data => setRecentTxs(Array.isArray(data) ? data.slice(0, 5) : []))
+      .catch(() => setRecentTxs([]))
+      .finally(() => setTxLoading(false))
+  }
+
+  useEffect(() => { loadActivity() }, [walletAddress]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSend = async (e) => {
+    e.preventDefault()
+    if (!isConnected)  { setTxMsg({ type: 'error', text: 'Please connect your wallet first.' }); return }
+    if (!recipient)    { setTxMsg({ type: 'error', text: 'Please enter a recipient address.' }); return }
+    if (!amount || parseFloat(amount) <= 0) { setTxMsg({ type: 'error', text: 'Please enter a valid amount.' }); return }
+
+    setSending(true)
+    setTxMsg({ type: '', text: '' })
+    try {
+      await addTransaction({
+        walletAddress,
+        to: recipient,
+        amount: parseFloat(amount),
+        type: 'send',
+        timestamp: new Date().toISOString(),
+      })
+      setTxMsg({ type: 'success', text: `Sent ${amount} ETH to ${recipient.slice(0, 10)}...` })
+      setRecipient('')
+      setAmount('')
+      loadActivity()
+    } catch (err) {
+      setTxMsg({ type: 'error', text: err.message || 'Transaction failed.' })
+    } finally {
+      setSending(false)
+    }
+  }
+
   return (
     <div className="bg-[#131314] text-[#e5e2e3] min-h-screen">
       <TopBar showSearch />
@@ -50,18 +100,18 @@ export default function Payments() {
                 </button>
               </div>
 
-              <div className="space-y-6">
-                {/* Asset Selector */}
+              <form onSubmit={handleSend} className="space-y-6">
+                {/* Asset selector (static display) */}
                 <div>
                   <label className="block text-[10px] font-bold uppercase tracking-widest text-[#bac9cc] mb-2 ml-1">Asset</label>
-                  <div className="flex items-center justify-between p-4 bg-[#0e0e0f] rounded-lg border border-transparent hover:border-[#c3f5ff]/20 transition-all cursor-pointer">
+                  <div className="flex items-center justify-between p-4 bg-[#0e0e0f] rounded-lg border border-transparent hover:border-[#c3f5ff]/20 transition-all">
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center">
-                        <span className="material-symbols-outlined text-blue-400">monetization_on</span>
+                        <span className="material-symbols-outlined text-indigo-400">diamond</span>
                       </div>
                       <div>
-                        <p className="font-bold text-[#e5e2e3]">USD Coin</p>
-                        <p className="text-xs text-[#bac9cc]">Balance: 12,450.00 USDC</p>
+                        <p className="font-bold text-[#e5e2e3]">Ethereum</p>
+                        <p className="text-xs text-[#bac9cc]">ETH</p>
                       </div>
                     </div>
                     <span className="material-symbols-outlined text-[#bac9cc]">expand_more</span>
@@ -77,6 +127,8 @@ export default function Payments() {
                       className="w-full bg-[#0e0e0f] border-none rounded-lg p-4 font-mono text-sm focus:ring-1 focus:ring-[#c3f5ff]/40 placeholder:text-neutral-600 transition-all text-[#e5e2e3] outline-none"
                       placeholder="0x... or nexus.eth"
                       type="text"
+                      value={recipient}
+                      onChange={e => setRecipient(e.target.value)}
                     />
                     <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-neutral-600">contact_page</span>
                   </div>
@@ -84,7 +136,7 @@ export default function Payments() {
 
                 {/* Amount */}
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#bac9cc] mb-2 ml-1">Amount</label>
+                  <label className="block text-[10px] font-bold uppercase tracking-widest text-[#bac9cc] mb-2 ml-1">Amount (ETH)</label>
                   <div className="bg-[#0e0e0f] rounded-lg border border-transparent focus-within:border-[#c3f5ff]/20 transition-all p-4">
                     <div className="flex items-center justify-between gap-4">
                       <input
@@ -92,12 +144,19 @@ export default function Payments() {
                         className="bg-transparent border-none p-0 text-3xl font-headline font-bold text-[#e5e2e3] focus:ring-0 placeholder:text-neutral-800 w-full outline-none"
                         placeholder="0.00"
                         type="number"
+                        min="0"
+                        step="0.001"
+                        value={amount}
+                        onChange={e => setAmount(e.target.value)}
                       />
-                      <button className="bg-[#c3f5ff]/10 text-[#00daf3] px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter hover:bg-[#c3f5ff]/20 transition-all">
+                      <button
+                        type="button"
+                        className="bg-[#c3f5ff]/10 text-[#00daf3] px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter hover:bg-[#c3f5ff]/20 transition-all"
+                      >
                         MAX
                       </button>
                     </div>
-                    <p className="text-xs text-[#bac9cc] mt-2">≈ $0.00 USD</p>
+                    <p className="text-xs text-[#bac9cc] mt-2">≈ ${amount ? (parseFloat(amount) * 2942.5).toFixed(2) : '0.00'} USD</p>
                   </div>
                 </div>
 
@@ -113,15 +172,27 @@ export default function Payments() {
                   </div>
                 </div>
 
+                {/* Status message */}
+                {txMsg.text && (
+                  <div className={`px-4 py-3 rounded-lg text-sm font-semibold ${
+                    txMsg.type === 'success' ? 'bg-[#00e297]/10 text-[#00e297] border border-[#00e297]/20'
+                    : 'bg-[#ffb4ab]/10 text-[#ffb4ab] border border-[#ffb4ab]/20'
+                  }`}>
+                    {txMsg.text}
+                  </div>
+                )}
+
                 {/* Submit */}
                 <button
                   id="authorize-transfer-btn"
-                  className="w-full py-5 rounded-xl bg-gradient-to-r from-[#c3f5ff] to-[#00e5ff] text-[#00363d] font-black text-lg tracking-tight hover:scale-[1.01] active:scale-[0.98] transition-all uppercase"
+                  type="submit"
+                  disabled={sending}
+                  className="w-full py-5 rounded-xl bg-gradient-to-r from-[#c3f5ff] to-[#00e5ff] text-[#00363d] font-black text-lg tracking-tight hover:scale-[1.01] active:scale-[0.98] transition-all uppercase disabled:opacity-50"
                   style={{ boxShadow: '0 20px 40px rgba(0,229,255,0.1)' }}
                 >
-                  Authorize Transfer
+                  {sending ? 'Recording...' : 'Authorize Transfer'}
                 </button>
-              </div>
+              </form>
             </div>
 
             {/* Right Column */}
@@ -130,32 +201,29 @@ export default function Payments() {
               <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5">
                 <div className="flex items-center justify-between mb-6">
                   <h4 className="text-sm font-bold uppercase tracking-widest text-[#bac9cc]">Recent Recipients</h4>
-                  <button className="text-xs text-[#00daf3] font-bold hover:underline">View All</button>
                 </div>
                 <div className="space-y-1">
-                  {[
-                    { name: 'alex.nexus.eth', addr: '0x7a...4d32' },
-                    { name: 'jordandao.eth', addr: '0x12...99ee' },
-                    { name: 'sarah_vaults', addr: '0xee...a231' },
-                  ].map((c, i) => (
-                    <div key={i} className="flex items-center gap-4 p-3 rounded-lg hover:bg-[#3a393a]/30 transition-all group cursor-pointer">
+                  {recentTxs.filter(tx => tx.type === 'send').slice(0, 3).map((tx, i) => (
+                    <div
+                      key={tx._id || i}
+                      className="flex items-center gap-4 p-3 rounded-lg hover:bg-[#3a393a]/30 transition-all group cursor-pointer"
+                      onClick={() => setRecipient(tx.to || '')}
+                    >
                       <div className="w-10 h-10 rounded-full bg-[#353436] border border-[#3b494c]/20 flex items-center justify-center font-bold text-cyan-400 text-sm">
-                        {c.name[0].toUpperCase()}
+                        {(tx.to || '?').slice(2, 4).toUpperCase()}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-bold">{c.name}</p>
-                        <p className="text-[10px] text-[#bac9cc] font-mono">{c.addr}</p>
+                        <p className="text-sm font-bold font-mono text-[#e5e2e3]">{(tx.to || '').slice(0, 6)}...{(tx.to || '').slice(-4)}</p>
+                        <p className="text-[10px] text-[#bac9cc]">{tx.amount} ETH</p>
                       </div>
                       <span className="material-symbols-outlined text-neutral-600 opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
                     </div>
                   ))}
+                  {recentTxs.filter(tx => tx.type === 'send').length === 0 && (
+                    <p className="text-xs text-neutral-500 text-center py-4">No recent recipients</p>
+                  )}
                 </div>
-                <button className="w-full mt-4 flex items-center justify-center gap-2 p-3 rounded-lg border border-dashed border-[#3b494c]/30 text-[#bac9cc] hover:border-[#c3f5ff]/50 hover:text-[#c3f5ff] transition-all text-xs font-semibold">
-                  <span className="material-symbols-outlined text-sm">add</span>Add New Recipient
-                </button>
               </div>
-
-
 
               {/* USDC Liquidity Sparkline */}
               <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5">
@@ -183,26 +251,29 @@ export default function Payments() {
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold font-headline">Recent Activity</h3>
-              <button className="text-sm text-[#bac9cc] hover:text-cyan-400 transition-colors">See all transactions</button>
             </div>
             <div className="glass-panel rounded-xl overflow-hidden border border-[#3b494c]/15">
-              {[
-                { dir: 'north_east', color: 'text-[#ffb4ab]', bg: 'bg-[#93000a]/30', label: 'Sent to alex.nexus.eth', time: '2 hours ago • Ethereum', amount: '- 1,200.00 USDC', amountColor: 'text-[#e5e2e3]' },
-                { dir: 'south_west', color: 'text-[#00e297]', bg: 'bg-[#00e297]/20', label: 'Received from Coinbase', time: '5 hours ago • Ethereum', amount: '+ 5,000.00 USDC', amountColor: 'text-[#00e297]' },
-                { dir: 'swap_horiz', color: 'text-neutral-400', bg: 'bg-neutral-800', label: 'Swapped ETH for USDC', time: 'Yesterday • Nexus Swap', amount: '2.45 ETH → 5,420.00 USDC', amountColor: 'text-[#e5e2e3]' },
-              ].map((tx, i) => (
-                <div key={i} className={`flex items-center justify-between p-4 px-6 hover:bg-[#3a393a]/10 transition-colors ${i > 0 ? 'border-t border-[#3b494c]/10' : ''}`}>
+              {txLoading ? (
+                <div className="p-8 text-center text-neutral-500 text-sm">Loading activity...</div>
+              ) : recentTxs.length === 0 ? (
+                <div className="p-8 text-center text-neutral-500 text-sm">
+                  {isConnected ? 'No transactions recorded yet.' : 'Connect wallet to see activity.'}
+                </div>
+              ) : recentTxs.map((tx, i) => (
+                <div key={tx._id || i} className={`flex items-center justify-between p-4 px-6 hover:bg-[#3a393a]/10 transition-colors ${i > 0 ? 'border-t border-[#3b494c]/10' : ''}`}>
                   <div className="flex items-center gap-6">
-                    <div className={`w-10 h-10 rounded-full ${tx.bg} flex items-center justify-center ${tx.color}`}>
-                      <span className="material-symbols-outlined">{tx.dir}</span>
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.type === 'send' ? 'bg-[#93000a]/30 text-[#ffb4ab]' : 'bg-[#00e297]/20 text-[#00e297]'}`}>
+                      <span className="material-symbols-outlined">{tx.type === 'send' ? 'north_east' : 'south_west'}</span>
                     </div>
                     <div>
-                      <p className="text-sm font-bold">{tx.label}</p>
-                      <p className="text-xs text-[#bac9cc]">{tx.time}</p>
+                      <p className="text-sm font-bold capitalize">{tx.type === 'send' ? `Sent to ${(tx.to || '').slice(0, 10)}...` : `Received`}</p>
+                      <p className="text-xs text-[#bac9cc]">{tx.timestamp ? new Date(tx.timestamp).toLocaleString() : '—'}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`text-sm font-bold ${tx.amountColor}`}>{tx.amount}</p>
+                    <p className={`text-sm font-bold ${tx.type === 'send' ? 'text-[#e5e2e3]' : 'text-[#00e297]'}`}>
+                      {tx.type === 'send' ? '-' : '+'}{tx.amount} ETH
+                    </p>
                     <p className="text-xs text-[#bac9cc]">Completed</p>
                   </div>
                 </div>

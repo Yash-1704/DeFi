@@ -6,6 +6,10 @@ const expenseSchema = new mongoose.Schema({
     ref: "Group",
     required: true
   },
+  description: {
+    type: String,
+    default: ""
+  },
   paidBy: {
     type: String, // wallet address
     required: true

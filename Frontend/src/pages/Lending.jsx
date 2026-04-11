@@ -1,5 +1,8 @@
+import { useState, useEffect } from 'react'
 import Sidebar from '../components/Sidebar'
 import TopBar from '../components/TopBar'
+import { useWallet } from '../hooks/useWallet'
+import { useContract } from '../hooks/useContract'
 
 const assets = [
   { name: 'USDC', sub: 'USD Coin', apy: '4.12%', liquidity: '$84.2M', balance: '12,400.00', icon: 'monetization_on', iconColor: 'text-blue-400', iconBg: 'bg-blue-500/10', iconBorder: 'border-blue-500/20' },
@@ -13,6 +16,24 @@ const borrowAssets = [
 ]
 
 export default function Lending() {
+  const { walletAddress, signer, isConnected } = useWallet()
+  const {
+    contractData, loading, txStatus, txMessage,
+    fetchContractData, deposit, stake, unstake, withdraw, clearTxStatus,
+  } = useContract(signer)
+
+  const [depositAmt,  setDepositAmt]  = useState('')
+  const [stakeAmt,    setStakeAmt]    = useState('')
+  const [withdrawAmt, setWithdrawAmt] = useState('')
+
+  useEffect(() => {
+    if (isConnected && walletAddress) fetchContractData(walletAddress)
+  }, [isConnected, walletAddress]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleDeposit  = async () => { if (!depositAmt)  return; await deposit(depositAmt,   walletAddress); setDepositAmt('') }
+  const handleStake    = async () => { if (!stakeAmt)    return; await stake(stakeAmt,       walletAddress); setStakeAmt('') }
+  const handleUnstake  = async () => { await unstake(walletAddress) }
+  const handleWithdraw = async () => { if (!withdrawAmt) return; await withdraw(withdrawAmt, walletAddress); setWithdrawAmt('') }
   return (
     <div className="bg-[#131314] text-[#e5e2e3] min-h-screen">
       <TopBar />
@@ -150,6 +171,140 @@ export default function Lending() {
               </div>
             ))}
           </div>
+        </section>
+
+        {/* ── DeFi Contract Section ─────────────────────────────────── */}
+        <section className="mb-12">
+          <h3 className="text-2xl font-headline font-bold text-[#e5e2e3] mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-[#00daf3]">hub</span>
+            DeFi Contract
+          </h3>
+
+          {!isConnected ? (
+            <div className="bg-[#1c1b1c] rounded-xl p-8 border border-[#3b494c]/10 text-center text-neutral-500">
+              Connect your wallet to interact with the DeFi contract.
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Status banner */}
+              {txStatus !== 'idle' && (
+                <div className={`flex items-center justify-between gap-4 px-5 py-4 rounded-xl border text-sm font-semibold
+                  ${ txStatus === 'loading' ? 'bg-[#00daf3]/10 border-[#00daf3]/30 text-[#00daf3]'
+                    : txStatus === 'success' ? 'bg-[#00e297]/10 border-[#00e297]/30 text-[#00e297]'
+                    : 'bg-[#ffb4ab]/10 border-[#ffb4ab]/30 text-[#ffb4ab]' }`}>
+                  <span>{txMessage}</span>
+                  <button onClick={clearTxStatus} className="text-xs opacity-60 hover:opacity-100">✕</button>
+                </div>
+              )}
+
+              {/* Contract overview */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#bac9cc] mb-2">Deposited Balance</p>
+                  <p className="text-3xl font-headline font-extrabold tracking-tight">{contractData.depositedBalance} <span className="text-[#00daf3] text-xl">ETH</span></p>
+                </div>
+                <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#bac9cc] mb-2">Accrued Reward</p>
+                  <p className="text-3xl font-headline font-extrabold tracking-tight text-[#00e297]">{contractData.reward} <span className="text-xl">ETH</span></p>
+                  <p className="text-xs text-neutral-500 mt-1">Rate: {contractData.interestRate} basis pts</p>
+                </div>
+                <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-[#bac9cc] mb-2">Staked Amount</p>
+                  <p className="text-3xl font-headline font-extrabold tracking-tight text-[#d1bcff]">{contractData.stakeAmount} <span className="text-xl">ETH</span></p>
+                  {contractData.stakeStartTime && (
+                    <p className="text-xs text-neutral-500 mt-1">Since {contractData.stakeStartTime}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Action cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                {/* Deposit */}
+                <div className="bg-[#1c1b1c] rounded-xl p-6 border border-[#3b494c]/10 flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#00daf3] text-lg">savings</span>
+                    <h4 className="font-headline font-bold text-sm">Deposit ETH</h4>
+                  </div>
+                  <input
+                    type="number" min="0" step="0.001"
+                    value={depositAmt}
+                    onChange={e => setDepositAmt(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-[#0e0e0f] border border-[#3b494c]/20 rounded-lg px-4 py-3 text-sm font-mono focus:ring-1 focus:ring-[#00daf3]/40 outline-none transition-all"
+                  />
+                  <button
+                    onClick={handleDeposit}
+                    disabled={loading || !depositAmt}
+                    className="w-full py-3 rounded-lg bg-gradient-to-r from-[#c3f5ff] to-[#00e5ff] text-[#00363d] font-black text-xs uppercase tracking-widest hover:opacity-90 disabled:opacity-40 transition-all"
+                  >
+                    {loading ? 'Pending...' : 'Deposit'}
+                  </button>
+                </div>
+
+                {/* Stake */}
+                <div className="bg-[#1c1b1c] rounded-xl p-6 border border-[#3b494c]/10 flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#d1bcff] text-lg">lock</span>
+                    <h4 className="font-headline font-bold text-sm">Stake ETH</h4>
+                  </div>
+                  <input
+                    type="number" min="0" step="0.001"
+                    value={stakeAmt}
+                    onChange={e => setStakeAmt(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-[#0e0e0f] border border-[#3b494c]/20 rounded-lg px-4 py-3 text-sm font-mono focus:ring-1 focus:ring-[#d1bcff]/40 outline-none transition-all"
+                  />
+                  <button
+                    onClick={handleStake}
+                    disabled={loading || !stakeAmt}
+                    className="w-full py-3 rounded-lg bg-[#d1bcff]/20 border border-[#d1bcff]/30 text-[#d1bcff] font-black text-xs uppercase tracking-widest hover:bg-[#d1bcff]/30 disabled:opacity-40 transition-all"
+                  >
+                    {loading ? 'Pending...' : 'Stake'}
+                  </button>
+                </div>
+
+                {/* Unstake */}
+                <div className="bg-[#1c1b1c] rounded-xl p-6 border border-[#3b494c]/10 flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#00e297] text-lg">lock_open</span>
+                    <h4 className="font-headline font-bold text-sm">Unstake All</h4>
+                  </div>
+                  <p className="text-xs text-neutral-500 flex-1">
+                    Currently staked: <span className="text-[#d1bcff] font-bold">{contractData.stakeAmount} ETH</span>
+                  </p>
+                  <button
+                    onClick={handleUnstake}
+                    disabled={loading || contractData.stakeAmount === '0.0000'}
+                    className="w-full py-3 rounded-lg bg-[#00e297]/20 border border-[#00e297]/30 text-[#00e297] font-black text-xs uppercase tracking-widest hover:bg-[#00e297]/30 disabled:opacity-40 transition-all"
+                  >
+                    {loading ? 'Pending...' : 'Unstake All'}
+                  </button>
+                </div>
+
+                {/* Withdraw */}
+                <div className="bg-[#1c1b1c] rounded-xl p-6 border border-[#3b494c]/10 flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#ffb4ab] text-lg">download</span>
+                    <h4 className="font-headline font-bold text-sm">Withdraw ETH</h4>
+                  </div>
+                  <input
+                    type="number" min="0" step="0.001"
+                    value={withdrawAmt}
+                    onChange={e => setWithdrawAmt(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-[#0e0e0f] border border-[#3b494c]/20 rounded-lg px-4 py-3 text-sm font-mono focus:ring-1 focus:ring-[#ffb4ab]/40 outline-none transition-all"
+                  />
+                  <button
+                    onClick={handleWithdraw}
+                    disabled={loading || !withdrawAmt}
+                    className="w-full py-3 rounded-lg bg-[#ffb4ab]/20 border border-[#ffb4ab]/30 text-[#ffb4ab] font-black text-xs uppercase tracking-widest hover:bg-[#ffb4ab]/30 disabled:opacity-40 transition-all"
+                  >
+                    {loading ? 'Pending...' : 'Withdraw'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* Risk Warning */}

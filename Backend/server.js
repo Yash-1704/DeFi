@@ -11,23 +11,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const groupRoutes = require("./routes/groupRoutes");
-const expenseRoutes = require("./routes/expenseRoutes");
-
-app.use("/groups", groupRoutes);
-app.use("/expenses", expenseRoutes);
-// Routes
-app.use("/api/users", require("./routes/userRoutes"));
-
-// Test route
-app.get("/", (req, res) => {
-  res.send("API is running...");
-});
-
+// Routes — all prefixed with /api/
+app.use("/api/groups",       require("./routes/groupRoutes"));
+app.use("/api/expenses",     require("./routes/expenseRoutes"));
+app.use("/api/users",        require("./routes/userRoutes"));
 app.use("/api/transactions", require("./routes/transactionRoutes"));
-// Start server
-const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Health check
+app.get("/", (req, res) => res.json({ status: "API is running" }));
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

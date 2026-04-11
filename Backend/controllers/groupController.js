@@ -1,21 +1,110 @@
 const Group = require("../models/groupModel");
 
-// Create group
+// ── Create group ───────────────────────────────────────────────
 exports.createGroup = async (req, res) => {
   try {
-    const { name, members } = req.body;
+    const { name, members, creator } = req.body;
+    if (!name || !name.trim()) {
+      return res.status(400).json({ error: "Group name is required" });
+    }
+    // Creator is automatically the first member
+    const initialMembers = creator
+      ? [...new Set([creator, ...(members || [])])]
+      : members || [];
 
-    const group = new Group({ name, members });
+    const group = new Group({ name: name.trim(), members: initialMembers, creator: creator || "" });
     await group.save();
+    res.status(201).json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
+// ── Get all groups (optionally filter by member) ───────────────
+exports.getGroups = async (req, res) => {
+  try {
+    const { member } = req.query;
+    const filter = member ? { members: { $in: [member.toLowerCase()] } } : {};
+    const groups = await Group.find(filter).sort({ createdAt: -1 });
+    res.json(groups);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── Get single group by ID ─────────────────────────────────────
+exports.getGroupById = async (req, res) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: "Group not found" });
     res.json(group);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get all groups
-exports.getGroups = async (req, res) => {
-  const groups = await Group.find();
-  res.json(groups);
+// ── Add member ─────────────────────────────────────────────────
+exports.addMember = async (req, res) => {
+  try {
+    const { walletAddress } = req.body;
+    if (!walletAddress) {
+      return res.status(400).json({ error: "walletAddress is required" });
+    }
+
+    const addr = walletAddress.toLowerCase();
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    // Prevent duplicates
+    const already = group.members.map(m => m.toLowerCase());
+    if (already.includes(addr)) {
+      return res.status(400).json({ error: "Member already exists in this group" });
+    }
+
+    group.members.push(addr);
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── Delete group ─────────────────────────────────────────────
+exports.deleteGroup = async (req, res) => {
+  try {
+    const group = await Group.findByIdAndDelete(req.params.id);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+    res.json({ success: true, message: "Group deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ── Fund pool ──────────────────────────────────────────────────
+exports.fundPool = async (req, res) => {
+  try {
+    const { walletAddress, amount } = req.body;
+    if (!walletAddress || !amount) {
+      return res.status(400).json({ error: "walletAddress and amount are required" });
+    }
+
+    const parsed = parseFloat(amount);
+    if (isNaN(parsed) || parsed <= 0) {
+      return res.status(400).json({ error: "Amount must be a positive number" });
+    }
+
+    const addr = walletAddress.toLowerCase();
+    const group = await Group.findById(req.params.id);
+    if (!group) return res.status(404).json({ error: "Group not found" });
+
+    // Update contribution
+    const current = group.contributions.get(addr) || 0;
+    group.contributions.set(addr, parseFloat((current + parsed).toFixed(6)));
+    group.totalPool = parseFloat(((group.totalPool || 0) + parsed).toFixed(6));
+
+    await group.save();
+    res.json(group);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

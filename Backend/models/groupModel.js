@@ -5,11 +5,28 @@ const groupSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  creator: {
+    type: String, // wallet address of group creator
+    default: ''
+  },
   members: [
     {
       type: String // wallet addresses
     }
   ],
+  contributions: {
+    type: Map,
+    of: Number,
+    default: {}
+  },
+  totalPool: {
+    type: Number,
+    default: 0
+  },
+  settled: {
+    type: Boolean,
+    default: false
+  },
   createdAt: {
     type: Date,
     default: Date.now

@@ -1,5 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAddress } from '@thirdweb-dev/react'
+import { useWallet } from '../hooks/useWallet'
+
+const truncate = (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : ''
 
 const mobileNav = [
   { path: '/dashboard', label: 'Dash', icon: 'dashboard' },
@@ -10,7 +12,16 @@ const mobileNav = [
 export default function TopBar({ title, subtitle, showSearch = false }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const address = useAddress()
+  const { walletAddress, isConnected, disconnectWallet } = useWallet()
+
+  const handleWalletBtn = () => {
+    if (isConnected) {
+      disconnectWallet()
+      navigate('/')
+    } else {
+      navigate('/')
+    }
+  }
 
   return (
     <>
@@ -42,17 +53,19 @@ export default function TopBar({ title, subtitle, showSearch = false }) {
             <span className="material-symbols-outlined text-sm">account_balance_wallet</span>
             Ethereum
           </button>
-          {address ? (
+          {isConnected ? (
             <button
               id="wallet-connected-btn"
+              onClick={handleWalletBtn}
+              title="Click to disconnect"
               className="px-5 py-2 bg-green-500 text-white rounded-full text-sm font-bold tracking-tight active:scale-90 transition-all duration-200 hover:opacity-90"
             >
-              Wallet connected
+              {truncate(walletAddress)}
             </button>
           ) : (
             <button
               id="connect-wallet-btn"
-              onClick={() => navigate('/')}
+              onClick={handleWalletBtn}
               className="px-5 py-2 bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] rounded-full text-sm font-bold tracking-tight active:scale-90 transition-all duration-200 hover:opacity-90"
             >
               Connect Wallet

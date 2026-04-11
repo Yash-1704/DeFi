@@ -1,9 +1,32 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
 import TopBar from '../components/TopBar'
-import { useNavigate } from 'react-router-dom'
+import { useWallet } from '../hooks/useWallet'
+import { useContract } from '../hooks/useContract'
+import { getTransactions } from '../services/api'
+
+const truncate = (addr) => addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : '—'
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { walletAddress, signer, isConnected, balance } = useWallet()
+  const { contractData, fetchContractData } = useContract(signer)
+
+  const [recentTxs, setRecentTxs]     = useState([])
+  const [txLoading, setTxLoading]     = useState(false)
+
+  // Fetch contract data + transactions whenever wallet connects
+  useEffect(() => {
+    if (!isConnected || !walletAddress) return
+    fetchContractData(walletAddress)
+
+    setTxLoading(true)
+    getTransactions(walletAddress)
+      .then(data => setRecentTxs(Array.isArray(data) ? data.slice(0, 5) : []))
+      .catch(() => setRecentTxs([]))
+      .finally(() => setTxLoading(false))
+  }, [isConnected, walletAddress]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="bg-[#131314] text-[#e5e2e3] min-h-screen">
@@ -28,22 +51,20 @@ export default function Dashboard() {
             </div>
             <div className="relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
               <div className="space-y-2">
-                <p className="text-neutral-500 text-sm font-semibold uppercase tracking-widest">Total Balance</p>
+                <p className="text-neutral-500 text-sm font-semibold uppercase tracking-widest">Wallet Balance</p>
                 <h2 className="text-5xl md:text-6xl font-extrabold tracking-tighter font-headline text-[#e5e2e3]">
-                  $1,284,592<span className="text-[#00daf3]">.42</span>
+                  {isConnected ? (
+                    <>{balance}<span className="text-[#00daf3]"> ETH</span></>
+                  ) : (
+                    <span className="text-neutral-500 text-3xl">Not connected</span>
+                  )}
                 </h2>
-                <div className="flex items-center gap-4 mt-4">
-                  <div className="flex items-center gap-1 text-[#00e297] text-sm font-bold bg-[#00e297]/10 px-3 py-1 rounded-full">
-                    <span className="material-symbols-outlined text-sm">trending_up</span>
-                    +12.4%
-                  </div>
-                  <p className="text-neutral-400 text-xs">Past 30 days performance</p>
-                </div>
+                {isConnected && walletAddress && (
+                  <p className="text-neutral-400 text-xs font-mono mt-2">{truncate(walletAddress)}</p>
+                )}
               </div>
               <div className="flex gap-2 bg-[#0e0e0f] p-1 rounded-lg border border-[#3b494c]/10">
-                <button className="px-4 py-1 text-xs font-bold text-[#00363d] bg-[#00e5ff] rounded-md">24h</button>
-                <button className="px-4 py-1 text-xs font-bold text-neutral-500 hover:text-[#e5e2e3] transition-colors">1w</button>
-                <button className="px-4 py-1 text-xs font-bold text-neutral-500 hover:text-[#e5e2e3] transition-colors">1m</button>
+                <button className="px-4 py-1 text-xs font-bold text-[#00363d] bg-[#00e5ff] rounded-md">Live</button>
               </div>
             </div>
             {/* Sparkline bars */}
@@ -57,50 +78,51 @@ export default function Dashboard() {
 
           {/* Key Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            {/* Wallet */}
+            {/* Wallet ETH */}
             <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
               <div className="flex justify-between items-start mb-4">
                 <span className="material-symbols-outlined text-[#00daf3] bg-[#00daf3]/10 p-2 rounded-lg">account_balance_wallet</span>
               </div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Wallet Amount</p>
-              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">$42,890.00</h3>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Wallet Balance</p>
+              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">
+                {isConnected ? `${balance} ETH` : '—'}
+              </h3>
             </div>
 
-            {/* Lended */}
+            {/* Deposited */}
             <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
               <div className="flex justify-between items-start mb-4">
                 <span className="material-symbols-outlined text-[#00e297] bg-[#00e297]/10 p-2 rounded-lg">upload</span>
               </div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Total Lended</p>
-              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">$120,500.00</h3>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Deposited</p>
+              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">
+                {isConnected ? `${contractData.depositedBalance} ETH` : '—'}
+              </h3>
             </div>
 
-            {/* Borrowed */}
+            {/* Rewards */}
             <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
               <div className="flex justify-between items-start mb-4">
-                <span className="material-symbols-outlined text-[#ffb4ab] bg-[#ffb4ab]/10 p-2 rounded-lg">download</span>
+                <span className="material-symbols-outlined text-[#ffb4ab] bg-[#ffb4ab]/10 p-2 rounded-lg">stars</span>
               </div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Total Borrowed</p>
-              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">$15,000.00</h3>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Accrued Reward</p>
+              <h3 className="text-3xl font-black font-headline text-[#e5e2e3]">
+                {isConnected ? `${contractData.reward} ETH` : '—'}
+              </h3>
             </div>
 
-            {/* Group Pools */}
+            {/* Staked */}
             <div className="bg-[#201f20] rounded-xl p-6 border border-[#3b494c]/5 relative overflow-hidden group hover:bg-[#3a393a] transition-colors">
               <div className="flex justify-between items-start mb-4">
-                <span className="material-symbols-outlined text-[#d1bcff] bg-[#d1bcff]/10 p-2 rounded-lg">groups</span>
+                <span className="material-symbols-outlined text-[#d1bcff] bg-[#d1bcff]/10 p-2 rounded-lg">lock</span>
               </div>
-              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Group Pools</p>
-              <h3 className="text-3xl font-black font-headline text-[#00daf3] mb-3">3.50 ETH</h3>
-              <div className="flex flex-col gap-1 w-full">
-                <div className="flex justify-between text-[10px] items-center bg-[#0e0e0f] px-2 py-1.5 rounded-md">
-                   <span className="text-neutral-400 font-bold max-w-[70px] truncate">Goa Trip</span> 
-                   <span className="text-[#e5e2e3] font-bold">1.50 ETH</span>
-                </div>
-                <div className="flex justify-between text-[10px] items-center bg-[#0e0e0f] px-2 py-1.5 rounded-md">
-                   <span className="text-neutral-400 font-bold max-w-[70px] truncate">Weekend</span> 
-                   <span className="text-[#e5e2e3] font-bold">2.00 ETH</span>
-                </div>
-              </div>
+              <p className="text-neutral-500 text-xs font-bold uppercase tracking-widest mb-1">Staked</p>
+              <h3 className="text-3xl font-black font-headline text-[#00daf3]">
+                {isConnected ? `${contractData.stakeAmount} ETH` : '—'}
+              </h3>
+              {isConnected && contractData.stakeStartTime && (
+                <p className="text-[10px] text-neutral-500 mt-1">Since {contractData.stakeStartTime}</p>
+              )}
             </div>
           </div>
 
@@ -113,24 +135,31 @@ export default function Dashboard() {
                 <button onClick={() => navigate('/transactions')} className="text-xs text-[#00daf3] font-bold hover:underline">View All</button>
               </div>
               <div className="bg-[#1c1b1c] rounded-xl overflow-hidden border border-[#3b494c]/10">
-                {[
-                  { icon: 'swap_horiz', color: '#00daf3', bg: '#00daf3', title: 'Swap ETH for NEX', time: 'Today, 2:45 PM', status: 'Completed', amount: '-1.42 ETH', usd: '≈ $4,203.12', amountColor: '#e5e2e3' },
-                  { icon: 'call_split', color: '#00e297', bg: '#00e297', title: 'Group Expense Settled', time: 'Yesterday, 11:12 PM', status: 'Completed', amount: '+0.42 ETH', usd: '≈ $154.22', amountColor: '#00e297' },
-                  { icon: 'upload', color: '#ffb4ab', bg: '#ffb4ab', title: 'Lending Withdrawal', time: 'Oct 24, 9:00 AM', status: 'Completed', amount: '-10,000 USDC', usd: '≈ $10,000.00', amountColor: '#e5e2e3' },
-                ].map((tx, i) => (
-                  <div key={i} className={`flex items-center justify-between p-5 hover:bg-[#201f20] transition-colors ${i > 0 ? 'border-t border-[#3b494c]/5' : ''}`}>
+                {txLoading ? (
+                  <div className="p-8 text-center text-neutral-500 text-sm">Loading transactions...</div>
+                ) : recentTxs.length === 0 ? (
+                  <div className="p-8 text-center text-neutral-500 text-sm">
+                    {isConnected ? 'No transactions found.' : 'Connect wallet to see transactions.'}
+                  </div>
+                ) : recentTxs.map((tx, i) => (
+                  <div key={tx._id || i} className={`flex items-center justify-between p-5 hover:bg-[#201f20] transition-colors ${i > 0 ? 'border-t border-[#3b494c]/5' : ''}`}>
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-[#353436] flex items-center justify-center" style={{ color: tx.color }}>
-                        <span className="material-symbols-outlined">{tx.icon}</span>
+                      <div className="w-12 h-12 rounded-full bg-[#353436] flex items-center justify-center text-[#00daf3]">
+                        <span className="material-symbols-outlined">
+                          {tx.type === 'send' ? 'north_east' : tx.type === 'receive' ? 'south_west' : 'swap_horiz'}
+                        </span>
                       </div>
                       <div>
-                        <p className="font-bold text-[#e5e2e3]">{tx.title}</p>
-                        <p className="text-xs text-neutral-500">{tx.time} • <span className="text-[#00e297]">{tx.status}</span></p>
+                        <p className="font-bold text-[#e5e2e3] capitalize">{tx.type || 'Transaction'}</p>
+                        <p className="text-xs text-neutral-500">
+                          {tx.timestamp ? new Date(tx.timestamp).toLocaleString() : '—'} •{' '}
+                          <span className="text-[#00e297]">Recorded</span>
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-headline font-bold" style={{ color: tx.amountColor }}>{tx.amount}</p>
-                      <p className="text-xs text-neutral-500">{tx.usd}</p>
+                      <p className="font-headline font-bold text-[#e5e2e3]">{tx.amount} ETH</p>
+                      <p className="text-xs text-neutral-500 font-mono">{truncate(tx.to || tx.recipient)}</p>
                     </div>
                   </div>
                 ))}
@@ -163,13 +192,12 @@ export default function Dashboard() {
                         <p className="text-xl font-black text-[#e5e2e3] font-headline">{asset.price}</p>
                       </div>
                     </div>
-                    {/* Mini Sparkline Visualization */}
                     <div className="h-10 w-full flex items-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
                       {asset.graph.map((val, j) => (
                         <div key={j} className="flex-1 rounded-sm transition-all" style={{
-                           height: `${val}%`, 
+                           height: `${val}%`,
                            backgroundColor: asset.isUp ? '#00e297' : '#ffb4ab',
-                           opacity: 0.3 + (j / asset.graph.length) * 0.7 
+                           opacity: 0.3 + (j / asset.graph.length) * 0.7
                         }} />
                       ))}
                     </div>

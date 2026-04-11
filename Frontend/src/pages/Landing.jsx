@@ -1,41 +1,33 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAddress, useConnect, metamaskWallet } from '@thirdweb-dev/react'
+import { useWallet } from '../hooks/useWallet'
 import logoUrl from '../assets/Logo.jpeg'
-
-const metamaskConfig = metamaskWallet()
 
 export default function Landing() {
   const navigate = useNavigate()
-  const address = useAddress()
-  const connect = useConnect()
+  const { walletAddress, isConnected, connectWallet, connectError, setConnectError } = useWallet()
 
   const [showLogin, setShowLogin] = useState(false)
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading]     = useState(false)
 
+  // Redirect once connected
   useEffect(() => {
-    if (address) {
+    if (isConnected && walletAddress) {
       setShowLogin(false)
       navigate('/dashboard')
     }
-  }, [address, navigate])
+  }, [isConnected, walletAddress, navigate])
 
   const handleWalletConnect = async () => {
-    try {
-      setError('');
-      setLoading(true);
-      await connect(metamaskConfig);
-    } catch (err) {
-      setError("Failed to connect wallet");
-    } finally {
-      setLoading(false);
-    }
+    setConnectError('')
+    setLoading(true)
+    await connectWallet()
+    setLoading(false)
   }
 
   const handleConnectClick = (e) => {
     if (e) e.stopPropagation();
-    if (address) {
+    if (isConnected) {
       navigate('/dashboard')
     } else {
       setShowLogin(true)
@@ -52,11 +44,11 @@ export default function Landing() {
               <div className="text-[#bac9cc] text-sm mb-4">
                 Securely connect to your Web3 wallet to access the dashboard.
               </div>
-              {error && <p className="text-red-400 text-sm">{error}</p>}
+              {connectError && <p className="text-red-400 text-sm">{connectError}</p>}
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); setShowLogin(false); }}
+                  onClick={() => { e.stopPropagation(); setConnectError(''); setShowLogin(false); }}
                   className="px-4 py-2 text-[#bac9cc] hover:text-white transition-colors"
                 >
                   Cancel
@@ -89,7 +81,7 @@ export default function Landing() {
             <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Explore</a>
             <a className="text-[#bac9cc] hover:text-[#00E5FF] transition-colors duration-300 cursor-pointer">Docs</a>
           </div>
-          {address ? (
+          {isConnected ? (
             <button
               id="landing-wallet-connected-btn"
               onClick={() => navigate('/dashboard')}
