@@ -25,6 +25,15 @@ export default function Lending() {
   const [depositAmt,  setDepositAmt]  = useState('')
   const [stakeAmt,    setStakeAmt]    = useState('')
   const [withdrawAmt, setWithdrawAmt] = useState('')
+  const [supplyAmt,   setSupplyAmt]   = useState('')
+  const [selectedPool, setSelectedPool] = useState(null)
+  const [selectedBorrowAsset, setSelectedBorrowAsset] = useState(null)
+  const [borrowAmount, setBorrowAmount] = useState('')
+  const [collateralAmount, setCollateralAmount] = useState('')
+  const [borrowMessage, setBorrowMessage] = useState('')
+  const [totalBorrowed, setTotalBorrowed] = useState('0.00')
+  const [totalCollateral, setTotalCollateral] = useState('0.00')
+  const [supplyMessage, setSupplyMessage] = useState('')
 
   useEffect(() => {
     if (isConnected && walletAddress) fetchContractData(walletAddress)
@@ -34,6 +43,89 @@ export default function Lending() {
   const handleStake    = async () => { if (!stakeAmt)    return; await stake(stakeAmt,       walletAddress); setStakeAmt('') }
   const handleUnstake  = async () => { await unstake(walletAddress) }
   const handleWithdraw = async () => { if (!withdrawAmt) return; await withdraw(withdrawAmt, walletAddress); setWithdrawAmt('') }
+
+  const openBorrowModal = (asset) => {
+    setSelectedBorrowAsset(asset)
+    setBorrowAmount('')
+    setCollateralAmount('')
+    setBorrowMessage('')
+  }
+
+  const closeBorrowModal = () => {
+    setSelectedBorrowAsset(null)
+    setBorrowAmount('')
+    setCollateralAmount('')
+    setBorrowMessage('')
+  }
+
+  const handleBorrow = () => {
+    if (!selectedBorrowAsset) return
+
+    const collateral = Number(collateralAmount)
+    const borrow = Number(borrowAmount)
+    const maxAllowed = collateral * 0.6
+
+    if (!collateralAmount || !borrowAmount || collateral <= 0 || borrow <= 0) {
+      setBorrowMessage('Enter valid collateral and borrow amounts.')
+      return
+    }
+
+    if (borrow > maxAllowed) {
+      setBorrowMessage(`Cannot borrow more than 60% of collateral. Max ${maxAllowed.toFixed(2)} ${selectedBorrowAsset.name}.`)
+      return
+    }
+
+    const newBorrowed = parseFloat(totalBorrowed) + borrow
+    const newCollateral = parseFloat(totalCollateral) + collateral
+
+    setTotalBorrowed(newBorrowed.toFixed(2))
+    setTotalCollateral(newCollateral.toFixed(2))
+    setBorrowMessage(`Successfully borrowed ${borrow.toFixed(2)} ${selectedBorrowAsset.name}.`)
+    setBorrowAmount('')
+    setCollateralAmount('')
+
+    window.setTimeout(() => {
+      closeBorrowModal()
+    }, 1200)
+  }
+
+  const openSupplyModal = (asset) => {
+    setSelectedPool(asset)
+    setSupplyAmt('')
+    setSupplyMessage('')
+  }
+
+  const closeSupplyModal = () => {
+    setSelectedPool(null)
+    setSupplyAmt('')
+    setSupplyMessage('')
+  }
+
+  const handleSupply = async () => {
+    if (!selectedPool) return
+    if (!isConnected) {
+      setSupplyMessage('Connect your wallet to invest in this pool.')
+      return
+    }
+    if (!supplyAmt || Number(supplyAmt) <= 0) {
+      setSupplyMessage('Please enter an amount to invest.')
+      return
+    }
+
+    setSupplyMessage('Confirm this transaction in your wallet...')
+    const success = await deposit(supplyAmt, walletAddress)
+
+    if (success) {
+      setSupplyMessage(`Invested ${supplyAmt} ETH in ${selectedPool.name}.`)
+      setSupplyAmt('')
+      window.setTimeout(() => {
+        closeSupplyModal()
+      }, 900)
+    } else {
+      setSupplyMessage(txMessage || 'Transaction failed. Please try again.')
+    }
+  }
+
   return (
     <div className="bg-[#131314] text-[#e5e2e3] min-h-screen">
       <TopBar />
@@ -57,27 +149,27 @@ export default function Lending() {
               My Positions
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div>
-                <p className="text-xs font-label uppercase tracking-widest text-[#bac9cc] mb-2">Total Collateral</p>
-                <p className="text-3xl font-headline font-extrabold tracking-tight">$142,500.00</p>
+              <div className="bg-[#0e0e0f]/50 rounded-lg p-6 flex flex-col justify-center border border-[#3b494c]/10">
+                <p className="text-xs font-label uppercase tracking-widest text-[#bac9cc] mb-2">Total Investment</p>
+                <p className="text-3xl font-headline font-extrabold tracking-tight">{contractData.depositedBalance} ETH</p>
                 <div className="mt-4 flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#00e297]" style={{ boxShadow: '0 0 10px #00e297' }} />
-                  <span className="text-xs font-label text-[#00e297]">+2.4% Net APY</span>
+                  <span className="text-xs font-label text-[#00e297]">Supplied liquidity</span>
                 </div>
-              </div>
-              <div>
-                <p className="text-xs font-label uppercase tracking-widest text-[#bac9cc] mb-2">Borrowed Amount</p>
-                <p className="text-3xl font-headline font-extrabold tracking-tight text-neutral-400">$45,210.00</p>
-                <p className="mt-4 text-xs font-label text-[#bac9cc]">31.7% LTV Ratio</p>
               </div>
               <div className="bg-[#0e0e0f]/50 rounded-lg p-6 flex flex-col justify-center border border-[#3b494c]/10">
-                <p className="text-xs font-label uppercase tracking-widest text-[#bac9cc] mb-4">Health Factor</p>
+                <p className="text-xs font-label uppercase tracking-widest text-[#bac9cc] mb-2">Total Borrowed</p>
+                <p className="text-3xl font-headline font-extrabold tracking-tight text-neutral-400">{totalBorrowed}</p>
+                <p className="mt-4 text-xs font-label text-[#bac9cc]">Outstanding loan balance</p>
+              </div>
+              <div className="bg-[#0e0e0f]/50 rounded-lg p-6 flex flex-col justify-center border border-[#3b494c]/10">
+                <p className="text-xs font-label uppercase tracking-widest text-[#bac9cc] mb-4">Total Collateral</p>
                 <div className="flex items-end justify-between mb-2">
-                  <span className="text-2xl font-headline font-bold text-[#00e297]">2.84</span>
-                  <span className="text-xs font-label text-[#00e297] font-bold uppercase">Safe</span>
+                  <span className="text-2xl font-headline font-bold text-[#d1bcff]">{totalCollateral} ETH</span>
+                  <span className="text-xs font-label text-[#d1bcff] font-bold uppercase">Secured</span>
                 </div>
                 <div className="w-full h-1 bg-[#353436] rounded-full overflow-hidden">
-                  <div className="h-full bg-gradient-to-r from-[#ffb4ab] via-yellow-400 to-[#00e297]" style={{ width: '85%' }} />
+                  <div className="h-full bg-gradient-to-r from-[#d1bcff] via-[#00e297] to-[#00e297]" style={{ width: '75%' }} />
                 </div>
               </div>
             </div>
@@ -141,7 +233,7 @@ export default function Lending() {
                     <p className="text-sm font-headline font-bold">{a.balance}</p>
                   </div>
                   <div className="col-span-2 flex justify-end">
-                    <button className="px-4 py-2 bg-[#353436] text-xs font-label font-bold rounded-lg hover:bg-[#c3f5ff]/10 hover:text-[#c3f5ff] transition-all">Supply</button>
+                    <button onClick={() => openSupplyModal(a)} className="px-4 py-2 bg-[#353436] text-xs font-label font-bold rounded-lg hover:bg-[#c3f5ff]/10 hover:text-[#c3f5ff] transition-all">Supply</button>
                   </div>
                 </div>
               ))}
@@ -166,7 +258,7 @@ export default function Lending() {
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <p className="text-xs font-label text-[#bac9cc]">Available: {b.available}</p>
-                  <button className="bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] text-xs font-label font-black px-6 py-2 rounded-lg hover:opacity-90 transition-all">Borrow</button>
+                  <button onClick={() => openBorrowModal(b)} className="bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] text-xs font-label font-black px-6 py-2 rounded-lg hover:opacity-90 transition-all">Borrow</button>
                 </div>
               </div>
             ))}
@@ -306,6 +398,149 @@ export default function Lending() {
             </div>
           )}
         </section>
+
+        {/* Supply modal */}
+        {selectedPool && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-6 bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl border border-[#3b494c]/30 bg-[#131314] p-8 shadow-2xl">
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <p className="text-xs font-label uppercase tracking-[0.25em] text-[#bac9cc] mb-2">Invest in pool</p>
+                  <h3 className="text-2xl font-headline font-bold text-[#e5e2e3]">{selectedPool.name} Supply</h3>
+                </div>
+                <button onClick={closeSupplyModal} className="text-neutral-400 hover:text-white text-2xl leading-none">×</button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2">
+                <div className="rounded-2xl bg-[#1c1b1c] p-4 border border-[#3b494c]/15">
+                  <p className="text-xs uppercase tracking-[0.24em] text-[#bac9cc] mb-2">Asset</p>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-2xl ${selectedPool.iconBg} flex items-center justify-center border ${selectedPool.iconBorder}`}>
+                      <span className={`material-symbols-outlined ${selectedPool.iconColor}`}>{selectedPool.icon}</span>
+                    </div>
+                    <div>
+                      <p className="font-headline font-bold text-[#e5e2e3]">{selectedPool.name}</p>
+                      <p className="text-xs font-label text-[#bac9cc]">{selectedPool.sub}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-[#1c1b1c] p-4 border border-[#3b494c]/15">
+                  <p className="text-xs uppercase tracking-[0.24em] text-[#bac9cc] mb-2">Supply APY</p>
+                  <p className="text-2xl font-headline font-bold text-[#00e297]">{selectedPool.apy}</p>
+                  <p className="text-xs text-[#bac9cc] mt-2">Total liquidity: {selectedPool.liquidity}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <label className="block text-xs font-bold uppercase tracking-[0.24em] text-[#bac9cc]">Investment amount</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={supplyAmt}
+                  onChange={(e) => setSupplyAmt(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full bg-[#0e0e0f] border border-[#3b494c]/20 rounded-2xl px-4 py-4 text-sm font-mono outline-none focus:ring-1 focus:ring-[#00daf3]/40 transition-all"
+                />
+
+                {supplyMessage && (
+                  <p className="text-sm text-[#c3f5ff]">{supplyMessage}</p>
+                )}
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                  <button onClick={closeSupplyModal} className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-[#3b494c]/15 text-sm font-bold text-[#bac9cc] hover:border-[#c3f5ff]/40 hover:text-white transition-all">Cancel</button>
+                  <button
+                    onClick={handleSupply}
+                    disabled={loading || !supplyAmt}
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] text-sm font-black uppercase tracking-widest hover:opacity-90 disabled:opacity-40 transition-all"
+                  >
+                    {loading ? 'Pending...' : 'Invest'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Borrow modal */}
+        {selectedBorrowAsset && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-6 bg-black/60 backdrop-blur-sm">
+            <div className="w-full max-w-lg rounded-3xl border border-[#3b494c]/30 bg-[#131314] p-8 shadow-2xl">
+              <div className="flex items-start justify-between gap-4 mb-6">
+                <div>
+                  <p className="text-xs font-label uppercase tracking-[0.25em] text-[#bac9cc] mb-2">Borrow asset</p>
+                  <h3 className="text-2xl font-headline font-bold text-[#e5e2e3]">{selectedBorrowAsset.name}</h3>
+                </div>
+                <button onClick={closeBorrowModal} className="text-neutral-400 hover:text-white text-2xl leading-none">×</button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 mb-6 sm:grid-cols-2">
+                <div className="rounded-2xl bg-[#1c1b1c] p-4 border border-[#3b494c]/15">
+                  <p className="text-xs uppercase tracking-[0.24em] text-[#bac9cc] mb-2">Asset</p>
+                  <div className="flex items-center gap-3">
+                    <div className={`w-12 h-12 rounded-2xl bg-[#0e0e0f] flex items-center justify-center`}>
+                      <span className="material-symbols-outlined text-[#c3f5ff]">{selectedBorrowAsset.icon || 'savings'}</span>
+                    </div>
+                    <div>
+                      <p className="font-headline font-bold text-[#e5e2e3]">{selectedBorrowAsset.name}</p>
+                      <p className="text-xs font-label text-[#00e297]">Borrow APR: {selectedBorrowAsset.rate}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl bg-[#1c1b1c] p-4 border border-[#3b494c]/15">
+                  <p className="text-xs uppercase tracking-[0.24em] text-[#bac9cc] mb-2">Available</p>
+                  <p className="text-2xl font-headline font-bold text-[#00e297]">{selectedBorrowAsset.available}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid gap-2">
+                  <label className="text-xs font-bold uppercase tracking-[0.24em] text-[#bac9cc]">Collateral amount</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={collateralAmount}
+                    onChange={(e) => setCollateralAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-[#0e0e0f] border border-[#3b494c]/20 rounded-2xl px-4 py-4 text-sm font-mono outline-none focus:ring-1 focus:ring-[#d1bcff]/40 transition-all"
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <label className="text-xs font-bold uppercase tracking-[0.24em] text-[#bac9cc]">Borrow amount</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={borrowAmount}
+                    onChange={(e) => setBorrowAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-[#0e0e0f] border border-[#3b494c]/20 rounded-2xl px-4 py-4 text-sm font-mono outline-none focus:ring-1 focus:ring-[#00daf3]/40 transition-all"
+                  />
+                </div>
+
+                <p className="text-xs text-[#bac9cc]">
+                  Max borrow allowed: {(Number(collateralAmount) * 0.6 || 0).toFixed(2)} {selectedBorrowAsset.name}
+                </p>
+
+                {borrowMessage && (
+                  <p className="text-sm text-[#c3f5ff]">{borrowMessage}</p>
+                )}
+
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                  <button onClick={closeBorrowModal} className="w-full sm:w-auto px-5 py-3 rounded-2xl border border-[#3b494c]/15 text-sm font-bold text-[#bac9cc] hover:border-[#c3f5ff]/40 hover:text-white transition-all">Cancel</button>
+                  <button
+                    onClick={handleBorrow}
+                    className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-gradient-to-br from-[#c3f5ff] to-[#00e5ff] text-[#00363d] text-sm font-black uppercase tracking-widest hover:opacity-90 transition-all"
+                  >
+                    Borrow
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Risk Warning */}
         <div className="bg-[#0e0e0f] border border-[#ffb4ab]/20 rounded-xl p-6 flex items-center gap-6 relative overflow-hidden">

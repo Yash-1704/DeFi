@@ -59,11 +59,13 @@ export function useContract(signer) {
   const runTx = async (txFn, successMsg, address) => {
     setLoading(true);
     setStatus('loading', 'Transaction pending...');
+    let success = false;
     try {
       const tx = await txFn();
       await tx.wait();
       setStatus('success', successMsg);
       await fetchContractData(address);
+      success = true;
     } catch (err) {
       const msg = err.code === 4001
         ? 'Transaction rejected by user.'
@@ -71,13 +73,14 @@ export function useContract(signer) {
       setStatus('error', msg);
     } finally {
       setLoading(false);
+      return success;
     }
   };
 
   // ── Actions ────────────────────────────────────────────────────
   const deposit = async (ethAmount, address) => {
     const contract = getContract();
-    await runTx(
+    return await runTx(
       () => contract.deposit({ value: ethers.utils.parseEther(ethAmount) }),
       `Deposited ${ethAmount} ETH successfully.`,
       address
